@@ -10,7 +10,7 @@ import unittest
 __author__ = 'Evan'
 
 
-class MyClassTest(unittest.TestCase):
+class UnitTestDemo(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -39,11 +39,12 @@ class MyClassTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             self._add(1, [2])
 
-    def test_add(self):
+    def test_add(self, a=1, b=2):
         """如果测试值和期待值相等就为Pass"""
-        result = self._add(1, 2)
-        self.assertEqual(result, 30, msg='这里填异常信息提示')
+        result = self._add(a, b)
+        expect_value = 30
+        self.assertEqual(result, expect_value, msg=f'{a}+{b}不等于{expect_value}')
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main()  # 直接调用main方法启动，弊端：用例按照字母顺序执行
