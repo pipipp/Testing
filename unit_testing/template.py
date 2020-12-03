@@ -43,7 +43,7 @@ class UnitTestDemo(unittest.TestCase):
         """如果测试值和期待值相等就为Pass"""
         result = self._add(a, b)
         expect_value = 30
-        self.assertEqual(result, expect_value, msg=f'{a}+{b}不等于{expect_value}')
+        self.assertEqual(result, expect_value, msg=f'Failed message：{a} + {b} != {expect_value}')
 
 
 if __name__ == '__main__':
