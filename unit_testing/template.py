@@ -1,5 +1,5 @@
 """
-unittest断言用法：
+unittest常用断言方法：
 1. assertEqual(a, b, msg="Error info") 判断a,b是否相等，不相等时，抛出 msg
 2. assertTure(x, msg="Error info") 判断x表达式是否为真，表达式为假时，抛出 msg
 3. assertIn(a, b, msg="Error info") 判断a是否在b里面，a不在b里面时，抛出 msg
