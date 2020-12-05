@@ -5,13 +5,12 @@ unittest常用断言方法：
 3. assertIn(a, b, msg="Error info") 判断a是否在b里面，a不在b里面时，抛出 msg
 4. assertIsNone(x, msg="Error info") 判断x是否为空，x不为空时，抛出 msg
 """
-import os
 import unittest
 
 __author__ = 'Evan'
 
 
-class UnitTestDemo(unittest.TestCase):
+class UnitTestExample(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -44,6 +43,7 @@ class UnitTestDemo(unittest.TestCase):
         with self.assertRaises(TypeError):
             self._add(1, [2])
 
+    @unittest.skip('skip the case test for test_case_2')
     def test_case_2(self, a=1, b=2, expect_value=30):
         """
         计算两个值相加，如果测试值和期待值相等就为Pass
@@ -53,9 +53,8 @@ class UnitTestDemo(unittest.TestCase):
         :return:
         """
         result = self._add(a, b)
-        self.assertEqual(result, expect_value, msg=f'Failed message：{a} + {b} != {expect_value}')
+        self.assertEqual(result, expect_value, msg=f'Error message: {a} + {b} != {expect_value}')
 
-    @unittest.skip('暂时跳过test_case_3的测试')
     def test_case_3(self, a=7, b=2, expect_value=50):
         """
         计算两个值相减，如果测试值和期待值相等就为Pass
@@ -65,23 +64,4 @@ class UnitTestDemo(unittest.TestCase):
         :return:
         """
         result = self._sub(a, b)
-        self.assertEqual(result, expect_value, msg=f'Failed message：{a} - {b} != {expect_value}')
-
-
-if __name__ == '__main__':
-    # 方案一
-    unittest.main()  # 直接调用main方法启动所有以"test_"开头命名的方法，用例按照字母顺序执行
-
-    # 方案二（构造测试套件执行）
-    suite = unittest.TestSuite()  # 实例化测试套件
-    for each in ['test_case_3', 'test_case_1', 'test_case_2']:  # 按照加载顺序执行用例
-        suite.addTest(UnitTestDemo(each))
-    runner = unittest.TextTestRunner()  # 实例化TextTestRunner类
-    runner.run(suite)  # 使用run()方法运行
-
-    # 方案三（简化测试集，自定义执行用例的命名规则，用例按照字母顺序执行）
-    test_dir = os.path.dirname(__file__)  # 用例所在目录
-    execute_pattern = 'test_*.py'  # 定义执行用例的命名规则
-    discover = unittest.defaultTestLoader.discover(start_dir=test_dir, pattern=execute_pattern)  # 定义测试集
-    runner = unittest.TextTestRunner()  # 实例化TextTestRunner类
-    runner.run(discover)  # 使用run()方法运行
+        self.assertEqual(result, expect_value, msg=f'Error message: {a} - {b} != {expect_value}')
