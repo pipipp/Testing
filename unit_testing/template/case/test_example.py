@@ -53,7 +53,7 @@ class UnitTestExample(unittest.TestCase):
         :return:
         """
         result = self._add(a, b)
-        self.assertEqual(result, expect_value, msg=f'Error message: {a} + {b} != {expect_value}')
+        self.assertEqual(result, expect_value, msg=f'Failed message: {a} + {b} != {expect_value}')
 
     def test_case_3(self, a=7, b=2, expect_value=50):
         """
@@ -64,4 +64,4 @@ class UnitTestExample(unittest.TestCase):
         :return:
         """
         result = self._sub(a, b)
-        self.assertEqual(result, expect_value, msg=f'Error message: {a} - {b} != {expect_value}')
+        self.assertEqual(result, expect_value, msg=f'Failed message: {a} - {b} != {expect_value}')
