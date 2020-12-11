@@ -393,8 +393,8 @@ class CCCSpider(object):
 
 
 if __name__ == '__main__':
-    spider = CCCSpider(login_account=(), thread_pool_max=10)
-    spider.login_ccc(automatic_login=False)
+    spider = CCCSpider(login_account=('enter_your_cec_username', 'enter_your_cec_password'), thread_pool_max=10)
+    spider.login_ccc(automatic_login=True, authentication_code='enter_your_pass_code')
     request_data = {
         'sernum': 'FOC24474C35',
         'uuttype': '',
