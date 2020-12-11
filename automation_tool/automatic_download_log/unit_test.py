@@ -396,14 +396,14 @@ if __name__ == '__main__':
     spider = CCCSpider(login_account=(), thread_pool_max=10)
     spider.login_ccc(automatic_login=False)
     request_data = {
-        'sernum': '',
+        'sernum': 'FOC24474C35',
         'uuttype': '',
         'area': '',
         'machine': '',
         'location': '',
         'passfail': 'A,F,P',
-        'start_time': '2020-09-01 08:00:00',
-        'end_time': '2020-09-30 20:00:00',
+        'start_time': '2020-12-01 08:00:00',
+        'end_time': '2020-12-30 20:00:00',
     }
     download_file = [
         {'limit_name': 'sequence_log', 'test_step_id': ''},
