@@ -4,6 +4,7 @@ Run the log download function manually
 # -*- coding:utf-8 -*-
 # @Time     : 2020/12/11
 # @Author   : Evan Liu
+# @Python   : 3.0+
 
 import os
 import re
