@@ -2,7 +2,7 @@
 Run the log download function manually
 """
 # -*- coding:utf-8 -*-
-# @Time     : 2020/12/10
+# @Time     : 2020/12/11
 # @Author   : Evan Liu
 
 import os
@@ -189,10 +189,15 @@ class CCCSpider(object):
                 cookie = input('cookie: ')
                 session = input('csession: ')
                 if not cookie or not session:
-                    print('Cookie and csession are empty, please fill in again')
+                    print('!!! cookie or csession are empty, please fill in again')
+                    continue
+
+                try:
+                    self.set_ccc_login_cookies(login_cookie=cookie, login_session=session)
+                except Exception:
+                    print('!!! The cookie format is incorrect: {}\nplease fill in again'.format(cookie))
                     continue
                 break
-            self.set_ccc_login_cookies(login_cookie=cookie, login_session=session)
 
         # Login token double check
         if not self.session.headers.get('csession') or not self.session.headers.get('_csession'):
@@ -212,7 +217,7 @@ class CCCSpider(object):
         else:
             return None
 
-    def get_measurement_data(self, serial_number='', download_file_list=['sequence_log'], request_params={}):
+    def get_measurement_data(self, serial_number='', download_file_list=[], request_params={}):
         """
         Gets the specified measurement file for the specified serial number
         :param str serial_number: Test serial number
@@ -226,16 +231,18 @@ class CCCSpider(object):
             measures_data = resp.json()
             for each_data in measures_data['measurements']:  # Walk through each measurement file
                 for file_type in download_file_list:
-                    limit_name = file_type['limit_name']
-                    step_id = file_type['step_id']
+                    limit_name = file_type.get('limit_name', '')
+                    step_id = file_type.get('test_step_id', '')
                     if limit_name and step_id:
                         # Matches the specified file type
-                        if limit_name in each_data['limit_name'] and step_id in each_data['step_id']:
-                            yield file_type, each_data['measurement']  # return the measurement type and id for download
+                        if limit_name == each_data['name'] and step_id == each_data['step_id']:
+                            file_info = '{}_{}'.format(limit_name, step_id)
+                            yield file_info, each_data['measurement']  # return the measurement type and id for download
                     else:
                         # Matches the specified file type
-                        if limit_name in each_data['limit_name']:
-                            yield file_type, each_data['measurement']  # return the measurement type and id for download
+                        if limit_name == each_data['name']:
+                            # return the measurement type and id for download
+                            yield limit_name, each_data['measurement']
             else:
                 yield None
 
@@ -305,12 +312,21 @@ class CCCSpider(object):
                             print('Download the file << {} >> failed !!!')
 
     @staticmethod
-    def input_info_check(check_data):
+    def input_info_check(check_data, download_file_list):
         """
         Check all input info
         :param check_data:
+        :param download_file_list:
         :return:
         """
+        # Check download file format
+        assert isinstance(download_file_list, list), 'download_file_list should be of list type'
+        for each in download_file_list:
+            if not isinstance(each, dict):
+                raise ValueError('The element in the download file list should be a dictionary type')
+            if not each.get('limit_name'):
+                raise ValueError('limit_name ({}) cannot be empty'.format(each))
+
         # Check passfail format
         check_data['passfail'] = check_data['passfail'].upper()
         if 'A' not in check_data['passfail'] and 'F' not in check_data['passfail'] and 'P' not in check_data['passfail']:
@@ -338,7 +354,7 @@ class CCCSpider(object):
         :param list download_file_list: Fill in the specified file type to download
         :return:
         """
-        self.input_info_check(first_request_data)
+        self.input_info_check(first_request_data, download_file_list)
         params = {
             'test': '',
             'dataset': 'test_results',
@@ -357,7 +373,7 @@ class CCCSpider(object):
         all_data = self.get_all_test_data(data=params)
         if not all_data or not all_data['results']:
             raise ValueError('No data was found, Please check that the information you entered is correct!')
-        print('Crawling all test data is completed, Total: {}'.format(len(all_data['results'])))
+        print('Crawling all test data is completed, test records count: {}'.format(len(all_data['results'])))
 
         self.download_results = []
         threads = []
@@ -372,11 +388,11 @@ class CCCSpider(object):
 
         for thread in threads:
             thread.join()
-        print('All the measurement files have been downloaded')
+        print('All the measurement files have been downloaded, download count: {}'.format(len(self.download_results)))
 
 
 if __name__ == '__main__':
-    spider = CCCSpider()
+    spider = CCCSpider(login_account=(), thread_pool_max=10)
     spider.login_ccc(automatic_login=False)
     request_data = {
         'sernum': '',
@@ -385,11 +401,13 @@ if __name__ == '__main__':
         'machine': '',
         'location': '',
         'passfail': 'A,F,P',
-        'start_time': '2020/09/01 08:00:00',
-        'end_time': '2020/09/30 08:00:00',
+        'start_time': '2020-09-01 08:00:00',
+        'end_time': '2020-09-30 20:00:00',
     }
     download_file = [
-        {'limit_name': 'sequence_log', 'step_id': ''},
-        {'limit_name': 'uut_buffer', 'step_id': ''},
+        {'limit_name': 'sequence_log', 'test_step_id': ''},
+        {'limit_name': 'UUT_buffer', 'test_step_id': ''},
+        # {'limit_name': 'UCLIM', 'test_step_id': 'UPX0 Bullet Test'},
+        # {'limit_name': 'UCLIM', 'test_step_id': 'UPX1 Bullet Test'},
     ]
     spider.start_crawl(first_request_data=request_data, download_file_list=download_file)
