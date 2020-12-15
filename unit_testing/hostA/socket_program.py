@@ -32,7 +32,7 @@ class SocketFileSharing(object):
         server.bind(self.local_host_ip)  # 绑定端口
         server.listen(5)  # 开始监听，并设置最大连接数为5
         ip, port = self.local_host_ip
-        self.print_info(msg=f'服务器端 {ip}:{port} 开启，等待客户端连接...')
+        self.print_info(msg=f'服务端 {ip}:{port} 开启，等待客户端连接...')
         return server
 
     def setup_client_side(self, other_host):
@@ -118,7 +118,7 @@ class SocketFileSharing(object):
 
     def start_server_forever_listen(self):
         """
-        启动服务器端永久监听
+        启动服务端永久监听
         :return:
         """
         server = self.setup_server_side()  # 配置Server端
@@ -127,14 +127,14 @@ class SocketFileSharing(object):
                 conn, address = server.accept()
                 self.print_info(msg='当前连接客户端：{}'.format(address))
 
-                if self.client_in_progress:  # 如果当前客户端正在访问其他服务器，阻塞服务器端交互，保持文件同步
+                if self.client_in_progress:  # 如果当前客户端正在访问其他服务器，阻塞服务端交互，保持文件同步
                     conn.send('目标服务器正在与其他服务器同步，请稍等...'.encode())
                     continue
 
                 self.server_in_progress = True
                 all_file = self.get_local_all_file()
                 if all_file:
-                    conn.send(str(all_file).encode())  # 发送服务器端所有文件给客户端检查
+                    conn.send(str(all_file).encode())  # 发送服务端所有文件给客户端检查
                 else:
                     conn.send('目标服务器没有任何数据'.encode())
 
@@ -151,7 +151,7 @@ class SocketFileSharing(object):
                             # TODO 添加文件传输
 
             except Exception as ex:
-                self.print_info(msg='服务器端发生错误：{}, 正在重新启动...'.format(ex))
+                self.print_info(msg='服务端发生错误：{}, 正在重新启动...'.format(ex))
                 if server:
                     server.close()
                 time.sleep(1)
@@ -166,7 +166,7 @@ class SocketFileSharing(object):
             client = None
             for each_host in self.other_host_ip:  # 循环连接每一个其他服务器
 
-                while self.server_in_progress:  # 如果当前服务器端被其他客户端访问，阻塞客户端访问其他服务器，保持文件同步
+                while self.server_in_progress:  # 如果当前服务端被其他客户端访问，阻塞客户端访问其他服务器，保持文件同步
                     time.sleep(5)  # 每5秒检查一次状态
                     continue
 
@@ -187,10 +187,10 @@ class SocketFileSharing(object):
                             # TODO 添加文件传输
 
                         else:
-                            self.print_info(side='client', msg=f'服务器端文件：{socket_data}')
-                            # 计算本地目录下的文件和服务器端文件的不同
+                            self.print_info(side='client', msg=f'服务端文件：{socket_data}')
+                            # 计算本地目录下的文件和服务端文件的不同
                             need_sync_files = []
-                            server_all_file = [i['file'] for i in eval(socket_data)]  # 取出服务器端所有的文件名
+                            server_all_file = [i['file'] for i in eval(socket_data)]  # 取出服务端所有的文件名
                             for each_file in all_file:
                                 if each_file['file'] not in server_all_file:
                                     need_sync_files.append(each_file)
