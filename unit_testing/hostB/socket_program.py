@@ -148,7 +148,7 @@ class SocketFileSharing(object):
 
                         if '需要同步的文件' in socket_data:
                             need_update_files = socket_data
-                            # with open('')
+                            # TODO 添加文件传输
 
             except Exception as ex:
                 self.print_info(msg='服务器端发生错误：{}, 正在重新启动...'.format(ex))
@@ -184,6 +184,8 @@ class SocketFileSharing(object):
                         if '目标服务器没有任何数据' in socket_data:
                             self.print_info(side='client', msg=socket_data)
                             client.send(f'需要同步的文件：{all_file}'.encode())
+                            # TODO 添加文件传输
+
                         else:
                             self.print_info(side='client', msg=f'服务器端文件：{socket_data}')
                             # 计算本地目录下的文件和服务器端文件的不同
@@ -195,6 +197,8 @@ class SocketFileSharing(object):
 
                             if need_sync_files:
                                 client.send(f'需要同步的文件：{need_sync_files}'.encode())
+                                # TODO 添加文件传输
+
                             else:
                                 client.send('不需要更新'.encode())
                     else:
@@ -213,7 +217,7 @@ class SocketFileSharing(object):
         start_server_forever_listen = threading.Thread(target=self.start_server_forever_listen)
         start_client_request_file_sync = threading.Thread(target=self.start_client_request_file_sync)
 
-        # 添加所有事件到列表
+        # 添加所有线程到列表
         for t in [start_server_forever_listen, start_client_request_file_sync]:
             threads.append(t)
 
@@ -223,7 +227,7 @@ class SocketFileSharing(object):
 
 
 if __name__ == '__main__':
-    file_sharing = SocketFileSharing(other_host_ip=[('127.0.0.1', 9999)],
-                                     local_host_ip=('127.0.0.1', 6666),
+    file_sharing = SocketFileSharing(other_host_ip=[('127.0.0.1', 6666)],
+                                     local_host_ip=('127.0.0.1', 9999),
                                      file_directory='task')
     file_sharing.main()
