@@ -16,12 +16,14 @@ class SocketFileSharing(object):
         self.other_host_ip = other_host_ip  # 其他Server端IP和端口
         self.local_host_ip = local_host_ip  # 本地Server端IP和端口
 
+        self.file_directory = file_directory  # 文件目录名
         self.file_location = os.path.join(os.getcwd(), file_directory)  # 文件目录绝对路径
         self.build_file_store()  # 创建文件存放目录
 
         self.server_in_progress = False  # 判断Server是否正在交互中
         self.client_in_progress = False  # 判断Client是否正在交互中
         self.buffer_size = 1024
+        self.separator = '<SEP>'
 
     def setup_server_side(self):
         """
@@ -126,12 +128,12 @@ class SocketFileSharing(object):
             try:
                 conn, address = server.accept()
                 self.print_info(msg='当前连接客户端：{}'.format(address))
+                self.server_in_progress = True
 
                 if self.client_in_progress:  # 如果当前客户端正在访问其他服务器，阻塞服务端交互，保持文件同步
                     conn.send('目标服务器正在与其他服务器同步，请稍等...'.encode())
                     continue
 
-                self.server_in_progress = True
                 all_file = self.get_local_all_file()
                 if all_file:
                     conn.send(str(all_file).encode())  # 发送服务端所有文件给客户端检查
@@ -146,8 +148,8 @@ class SocketFileSharing(object):
                         if '不需要更新' in socket_data or '更新已完成' in socket_data:
                             break
 
-                        if '需要同步的文件' in socket_data:
-                            need_update_files = socket_data
+                        if self.separator in socket_data:
+                            file_name, file_size, file_md5 = socket_data.split(self.separator)
                             # TODO 添加文件传输
 
             except Exception as ex:
@@ -166,7 +168,7 @@ class SocketFileSharing(object):
             client = None
             for each_host in self.other_host_ip:  # 循环连接每一个其他服务器
 
-                while self.server_in_progress:  # 如果当前服务端被其他客户端访问，阻塞客户端访问其他服务器，保持文件同步
+                while self.server_in_progress:  # 如果当前服务端正在被其他客户端访问，阻塞客户端访问其他服务器，保持文件同步
                     time.sleep(5)  # 每5秒检查一次状态
                     continue
 
@@ -188,16 +190,37 @@ class SocketFileSharing(object):
 
                         else:
                             self.print_info(side='client', msg=f'服务端文件：{socket_data}')
-                            # 计算本地目录下的文件和服务端文件的不同
+                            # 比较本地目录下的文件和服务端文件的不同
+                            server_file_mapping = {}
+                            for server_file in eval(socket_data):  # 转变为字典格式，保存所有的服务端文件名
+                                server_file_mapping[server_file['file']] = server_file
+
+                            server_files = [i for i in server_file_mapping.keys()]  # 取出服务端所有的文件名
+
                             need_sync_files = []
-                            server_all_file = [i['file'] for i in eval(socket_data)]  # 取出服务端所有的文件名
                             for each_file in all_file:
-                                if each_file['file'] not in server_all_file:
+                                if each_file['file'] not in server_files:  # 如果本地的文件不在服务端，添加到同步文件中
                                     need_sync_files.append(each_file)
+                                    continue
+
+                                server_file_md5 = server_file_mapping[each_file['file']]['size']
+                                if each_file['md5'] != server_file_md5:  # 如果本地文件和服务端文件md5不同，添加到同步文件中
+                                    need_sync_files.append(each_file)
+                                    continue
 
                             if need_sync_files:
-                                client.send(f'需要同步的文件：{need_sync_files}'.encode())
                                 # TODO 添加文件传输
+                                for each_file in need_sync_files:
+                                    file_name = each_file['file'].split(self.file_directory, 1)[-1]
+                                    file_size = each_file['size']
+                                    file_md5 = each_file['md5']
+
+                                    # 发送文件名字和文件大小，必须进行编码处理
+                                    client.send(f"{file_name}{self.separator}{file_size}{self.separator}{file_md5}".encode())
+
+                                    progress = tqdm(range(each_file['size']), f"发送{file_name}", unit="B", unit_divisor=1024)
+                                    with open(each_file['file'], 'rb') as rf:
+                                        client.send(''.encode())
 
                             else:
                                 client.send('不需要更新'.encode())
