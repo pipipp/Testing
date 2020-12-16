@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 """
 使用Socket实现多主机之间的文件共享
 """
@@ -22,8 +23,11 @@ class SocketFileSharing(object):
 
         self.server_in_progress = False  # 判断Server是否正在交互中
         self.client_in_progress = False  # 判断Client是否正在交互中
-        self.buffer_size = 1024
-        self.separator = '<SEP>'
+
+        self.maximum_transfer_size = 1073741824  # 文件传输上限1G
+        self.buffer_size = 1024  # Socket buffer size
+        self.socket_separator = '<SEP>'
+        self.system_separator = '\\'
 
     def setup_server_side(self):
         """
@@ -77,15 +81,62 @@ class SocketFileSharing(object):
     @staticmethod
     def print_info(side='server', msg=''):
         """
-        根据side添加不同的前缀信息
-        :param side:
+        根据side打印不同的前缀信息
+        :param side: 默认server端
         :param msg:
         :return:
         """
+        current_time = time.strftime('%Y-%m-%d %H:%M:%S')
         if side == 'server':
-            print(f'Server msg --> {msg}')
+            print(f'Server print >> {current_time} - {msg}')
         else:
-            print(f'Client msg --> {msg}')
+            print(f'Client print >> {current_time} - {msg}')
+
+    @staticmethod
+    def send_socket_info(handle, side='server', msg=''):
+        """
+        发送socket info，并根据side打印不同的前缀信息
+        :param handle: socket句柄
+        :param side: 默认server端
+        :param msg: 要发送的内容
+        :return:
+        """
+        handle.send(msg.encode())
+        current_time = time.strftime('%Y-%m-%d %H:%M:%S')
+        if side == 'server':
+            print(f'Server send --> {current_time} - {msg}')
+        else:
+            print(f'Client send --> {current_time} - {msg}')
+
+    def receive_socket_info(self, handle, expected_msg, side='server'):
+        """
+        接收socket info，判断其返回值，并根据side打印不同的前缀信息
+        :param handle: socket句柄
+        :param expected_msg: 期待接受的内容，如果接受内容不在返回结果中，一直循环等待，期待内容可以为字符串，也可以为多个字符串组成的列表或元组
+        :param side: 默认server端
+        :return:
+        """
+        while True:
+            socket_data = handle.recv(self.buffer_size).decode()
+            current_time = time.strftime('%Y-%m-%d %H:%M:%S')
+            if side == 'server':
+                print(f'Server received ==> {current_time} - {socket_data}')
+            else:
+                print(f'Client received ==> {current_time} - {socket_data}')
+
+            if isinstance(expected_msg, (list, tuple)):
+                flag = False
+                for expect in expected_msg:  # 循环判断每个期待字符是否在返回结果中
+                    if expect in socket_data:  # 如果有任意一个存在，跳出循环
+                        flag = True
+                        break
+                if flag:
+                    break
+            else:
+                if expected_msg in socket_data:
+                    break
+            time.sleep(3)
+        return socket_data
 
     def get_local_all_file(self):
         """
@@ -130,30 +181,61 @@ class SocketFileSharing(object):
                 self.print_info(msg='当前连接客户端：{}'.format(address))
                 self.server_in_progress = True
 
-                if self.client_in_progress:  # 如果当前客户端正在访问其他服务器，阻塞服务端交互，保持文件同步
-                    conn.send('目标服务器正在与其他服务器同步，请稍等...'.encode())
+                while self.client_in_progress:  # 如果当前客户端正在访问其他服务器，阻塞服务端交互，保持文件同步
+                    self.send_socket_info(handle=conn, msg='目标服务器正在与其他服务器同步，请稍等...')
+                    time.sleep(5)  # 每5秒检查一次状态
                     continue
+
+                self.send_socket_info(handle=conn, msg='服务端已就绪...')
+                self.receive_socket_info(handle=conn, expected_msg='请求服务端文件列表')
 
                 all_file = self.get_local_all_file()
                 if all_file:
-                    conn.send(str(all_file).encode())  # 发送服务端所有文件给客户端检查
+                    # 发送服务端所有文件给客户端检查
+                    self.send_socket_info(handle=conn, msg=str(all_file))
                 else:
-                    conn.send('目标服务器没有任何数据'.encode())
+                    self.send_socket_info(handle=conn, msg='目标服务器没有任何数据')
 
+                expect_info = ['不需要更新', '开始更新']
+                socket_data = self.receive_socket_info(handle=conn, expected_msg=expect_info)
+
+                # 如果不需要更新，跳到下次连接
+                if expect_info[0] in socket_data:
+                    continue
+
+                self.send_socket_info(handle=conn, msg='服务端已收到更新请求')
                 while True:
-                    socket_data = conn.recv(self.buffer_size).decode()
-                    if socket_data:
-                        self.print_info(msg=f'{address} {socket_data}')
+                    expect_info = ['全部更新完毕', '文件描述: ']
+                    socket_data = self.receive_socket_info(handle=conn, expected_msg=expect_info)
 
-                        if '不需要更新' in socket_data or '更新已完成' in socket_data:
+                    # 如果全部更新完毕，跳出循环
+                    if expect_info[0] in socket_data:
+                        break
+
+                    # TODO 开始接收客户端的文件
+                    file_name, file_size, file_md5 = socket_data.split(expect_info[1])[-1].split(self.socket_separator)
+                    self.send_socket_info(handle=conn, msg='服务端已收到文件描述')
+
+                    # TODO 判断文件是否在文件夹中，最后实现，单独加一个函数来处理
+                    files = file_name.split(self.system_separator)
+                    for each in files:  # 先拿到实际的文件名，只涉及一层，后续添加多个文件夹判断功能
+                        if '.' in each:
+                            file_name = each
                             break
 
-                        if self.separator in socket_data:
-                            file_name, file_size, file_md5 = socket_data.split(self.separator)
-                            # TODO 添加文件传输
+                    # 接收客户端发送的文件
+                    while True:
+                        socket_data = self.receive_socket_info(handle=conn, expected_msg='')
+                        if '文件传输完毕' in socket_data:
+                            break
+
+                        with open(file_name, 'ab') as wf:
+                            # 写入文件
+                            wf.write(socket_data.encode())
+                        self.send_socket_info(handle=conn, msg='服务端接收文件成功')
 
             except Exception as ex:
-                self.print_info(msg='服务端发生错误：{}, 正在重新启动...'.format(ex))
+                self.print_info(msg='服务端发生错误: {}, 正在重新启动...'.format(ex))
                 if server:
                     server.close()
                 time.sleep(1)
@@ -174,32 +256,30 @@ class SocketFileSharing(object):
 
                 try:
                     client = self.setup_client_side(each_host)  # 配置Client访问指定的Server端
-                    while True:
-                        socket_data = client.recv(self.buffer_size).decode()
-                        if '目标服务器正在与其他服务器同步' in socket_data:
-                            self.print_info(side='client', msg=socket_data)
-                            continue
-                        break
+
+                    self.receive_socket_info(handle=client, side='client', expected_msg='服务端已就绪')
+                    self.send_socket_info(handle=client, side='client', msg='请求服务端文件列表')
+
+                    socket_data = self.receive_socket_info(handle=client, side='client', expected_msg='')
 
                     all_file = self.get_local_all_file()
                     if all_file:
                         if '目标服务器没有任何数据' in socket_data:
-                            self.print_info(side='client', msg=socket_data)
-                            client.send(f'需要同步的文件：{all_file}'.encode())
-                            # TODO 添加文件传输
+                            self.send_socket_info(handle=client, side='client', msg=f'需要同步的文件: {all_file}')
+                            # TODO 开始文件传输
 
                         else:
-                            self.print_info(side='client', msg=f'服务端文件：{socket_data}')
-                            # 比较本地目录下的文件和服务端文件的不同
+                            # 取出服务端所有的文件信息
                             server_file_mapping = {}
-                            for server_file in eval(socket_data):  # 转变为字典格式，保存所有的服务端文件名
+                            for server_file in eval(socket_data):  # 转变为字典格式，服务端文件名用作Key，方便读取
                                 server_file_mapping[server_file['file']] = server_file
 
                             server_files = [i for i in server_file_mapping.keys()]  # 取出服务端所有的文件名
 
+                            # 判断需要传输到服务端的文件
                             need_sync_files = []
                             for each_file in all_file:
-                                if each_file['file'] not in server_files:  # 如果本地的文件不在服务端，添加到同步文件中
+                                if each_file['file'] not in server_files:  # 如果本地文件不在服务端，添加到同步文件中
                                     need_sync_files.append(each_file)
                                     continue
 
@@ -209,23 +289,43 @@ class SocketFileSharing(object):
                                     continue
 
                             if need_sync_files:
-                                # TODO 添加文件传输
+                                # TODO 开始文件传输
+                                self.send_socket_info(handle=client, side='client', msg='开始更新')
+                                self.receive_socket_info(handle=client, side='client', expected_msg='服务端已收到更新请求')
+
                                 for each_file in need_sync_files:
-                                    file_name = each_file['file'].split(self.file_directory, 1)[-1]
+                                    file_name = self.file_directory + each_file['file'].split(self.file_directory, 1)[-1]
                                     file_size = each_file['size']
                                     file_md5 = each_file['md5']
 
-                                    # 发送文件名字和文件大小，必须进行编码处理
-                                    client.send(f"{file_name}{self.separator}{file_size}{self.separator}{file_md5}".encode())
+                                    # 发送文件名、文件大小、md5值到服务端
+                                    file_info = f'{file_name}{self.socket_separator}{file_size}{self.socket_separator}{file_md5}'
+                                    self.send_socket_info(handle=client, side='client', msg=f'文件描述: {file_info}')
+                                    self.receive_socket_info(handle=client, side='client', expected_msg='服务端已收到文件描述')
 
-                                    progress = tqdm(range(each_file['size']), f"发送{file_name}", unit="B", unit_divisor=1024)
+                                    # 发送文件到服务端
+                                    progress = tqdm(range(each_file['size']), f'发送: {file_name}', unit='B', unit_divisor=1024)
                                     with open(each_file['file'], 'rb') as rf:
-                                        client.send(''.encode())
+                                        for _ in progress:
+                                            # 读取文件
+                                            bytes_read = rf.read(self.buffer_size)
+                                            if not bytes_read:
+                                                transfer_flag = True
+                                                break
+                                            # 发送文件
+                                            self.send_socket_info(handle=client, side='client',
+                                                                  msg=bytes_read.decode())
+                                            self.receive_socket_info(handle=client, side='client',
+                                                                     expected_msg='服务端接收文件成功')
+                                            progress.update(len(bytes_read))
 
+                                    self.send_socket_info(handle=client, side='client', msg='文件传输完毕')
+
+                                self.send_socket_info(handle=client, side='client', msg='全部更新完毕')
                             else:
-                                client.send('不需要更新'.encode())
+                                self.send_socket_info(handle=client, side='client', msg='不需要更新')
                     else:
-                        client.send('不需要更新'.encode())
+                        self.send_socket_info(handle=client, side='client', msg='不需要更新')
                     client.close()
 
                 except Exception as ex:
