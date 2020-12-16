@@ -193,6 +193,7 @@ class SocketFileSharing(object):
             try:
                 server = self.setup_server_side()  # 配置Server端
                 conn, address = server.accept()
+                # conn.settimeout(3)
                 self.print_info(msg='当前连接客户端：{}'.format(address))
 
                 self.receive_socket_info(handle=conn, expected_msg='客户端已就绪')
@@ -276,9 +277,11 @@ class SocketFileSharing(object):
             for each_host in self.other_host_ip:  # 循环连接每一个其他服务器
                 try:
                     client = self.setup_client_side(each_host)  # 配置Client访问指定的Server端
+                    # client.settimeout(3)
 
-                    while self.server_in_progress:  # 如果当前服务端正在被其他客户端访问，阻塞与其交互，等待服务端释放
+                    if self.server_in_progress:  # 如果当前服务端正在被其他客户端访问，阻塞与其交互，等待服务端释放
                         self.send_socket_info(handle=client, side='client', msg='正在与其他服务器同步，请稍等...')
+                        client.close()
                         continue
 
                     self.send_socket_info(handle=client, side='client', msg='客户端已就绪')
