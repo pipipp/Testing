@@ -222,11 +222,11 @@ class SocketFileSharing(object):
                     self.send_socket_info(handle=conn, msg='服务端已收到文件描述')
 
                     # TODO 判断文件是否在文件夹中，最后实现，单独加一个函数来处理
-                    files = file_name.split(self.system_separator)
-                    for each in files:  # 先拿到实际的文件名，只涉及一层，后续添加多个文件夹判断功能
-                        if '.' in each:
-                            file_name = each
-                            break
+                    # files = file_name.split(self.system_separator)
+                    # for each in files:  # 先拿到实际的文件名，只涉及一层，后续添加多个文件夹判断功能
+                    #     if '.' in each:
+                    #         file_name = each
+                    #         break
 
                     # 接收客户端发送的文件
                     while True:
@@ -238,6 +238,9 @@ class SocketFileSharing(object):
                             # 写入文件
                             wf.write(socket_data.encode())
                         self.send_socket_info(handle=conn, msg='服务端接收文件成功')
+
+                    # TODO 检查文件传输后的md5
+                    pass
 
             except Exception as ex:
                 self.print_info(msg='服务端发生错误: {}, 正在重新启动...'.format(ex))
@@ -302,6 +305,11 @@ class SocketFileSharing(object):
                                     file_name = self.file_directory + each_file['file'].split(self.file_directory, 1)[-1]
                                     file_size = each_file['size']
                                     file_md5 = each_file['md5']
+
+                                    if file_size > self.maximum_transfer_size:
+                                        self.print_info(side='client', msg=f'跳过超过文件传输上限的文件，'
+                                                                           f'file：{file_name}，size：{file_size}')
+                                        continue
 
                                     # 发送文件名、文件大小、md5值到服务端
                                     file_info = f'{file_name}{self.socket_separator}{file_size}{self.socket_separator}{file_md5}'
