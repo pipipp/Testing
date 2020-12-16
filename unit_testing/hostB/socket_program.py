@@ -1,33 +1,38 @@
 """
-使用Socket实现多主机之间的文件共享
+使用Socket实现多主机之间的文件共享和实时同步
 """
 import os
 import time
+import tqdm
 import socket
 import hashlib
 import threading
 
-from tqdm import tqdm
 
+class SocketFileSync(object):
 
-class SocketFileSharing(object):
+    def __init__(self, local_host_ip, other_host_ip, file_directory='task'):
+        """
+        Socket初始化配置
+        :param local_host_ip: 本地Server端IP和端口，元组类型：(ip, port)
+        :param other_host_ip: 其他Server端IP和端口，列表类型：[(ip, port), (ip, port)]
+        :param file_directory: 文件目录名
+        """
+        self.local_host_ip = local_host_ip
+        self.other_host_ip = other_host_ip
+        self.file_directory = file_directory
 
-    def __init__(self, other_host_ip, local_host_ip=('127.0.0.1', 9999), file_directory='task'):
-        self.other_host_ip = other_host_ip  # 其他Server端IP和端口
-        self.local_host_ip = local_host_ip  # 本地Server端IP和端口
-
-        self.file_directory = file_directory  # 文件目录名
         self.file_location = os.path.join(os.getcwd(), file_directory)  # 文件目录绝对路径
         self.build_file_store()  # 创建文件存放目录
 
-        self.server_in_progress = False  # 判断Server是否正在交互中
-        self.client_in_progress = False  # 判断Client是否正在交互中
-
         self.maximum_transfer_size = 1073741824  # 文件传输上限1G
         self.buffer_size = 1024  # Socket buffer size
+        self.waiting_time = 5  # 所有的time.sleep()时间
+        self.automatic_sync_time = 10  # 客户端自动访问其他服务端的等待时间
+
+        self.latest_file_list = []  # 记录最新的文件列表，随着本地目录下的文件更改而更新
         self.socket_separator = '<SEP>'
         self.system_separator = '\\'
-        self.waiting_time = 5  # 所有的time.sleep()时间
 
     def setup_server_side(self):
         """
@@ -49,10 +54,10 @@ class SocketFileSharing(object):
         """
         ip, port = other_host
         client = socket.socket()  # 实例化Socket
-        self.print_info(side='client', msg=f'开始连接服务器 {ip}:{port} ...')
+        self.print_info(side='client', msg=f'开始连接服务端 {ip}:{port} ...')
 
         client.connect((ip, port))
-        self.print_info(side='client', msg=f'连接服务器 {ip}:{port} 成功')
+        self.print_info(side='client', msg=f'连接服务端 {ip}:{port} 成功')
         return client
 
     def build_file_store(self):
@@ -83,7 +88,7 @@ class SocketFileSharing(object):
         """
         根据side打印不同的前缀信息
         :param side: 默认server端
-        :param msg:
+        :param msg: 要打印的内容
         :return:
         """
         current_time = time.strftime('%Y-%m-%d %H:%M:%S')
@@ -185,7 +190,12 @@ class SocketFileSharing(object):
 
     def start_server_forever_listen(self):
         """
-        启动服务端永久监听
+        启动服务端永久监听，提供服务端和客户端的文件同步功能
+        服务端事务：
+            1. 提供本地目录下所有文件的信息给客户端
+            2. 接收客户端传送过来的文件，并写入到本地目录
+            3. 检查传送后的文件信息是否有误，如果有误实现重传功能
+            4. 实时更新 self.latest_file_list 的值
         :return:
         """
         while True:
@@ -193,12 +203,12 @@ class SocketFileSharing(object):
             try:
                 server = self.setup_server_side()  # 配置Server端
                 conn, address = server.accept()
-                conn.settimeout(3)
+                # conn.settimeout(5)
                 self.print_info(msg='当前连接客户端：{}'.format(address))
 
+                # 与客户端握手
                 self.receive_socket_info(handle=conn, expected_msg='客户端已就绪')
                 self.send_socket_info(handle=conn, msg='服务端已就绪')
-                self.server_in_progress = True
 
                 self.receive_socket_info(handle=conn, expected_msg='请求服务端文件列表')
                 all_file = self.get_local_all_file()
@@ -206,7 +216,7 @@ class SocketFileSharing(object):
                     # 发送服务端所有文件给客户端检查
                     self.send_socket_info(handle=conn, msg=str(all_file))
                 else:
-                    self.send_socket_info(handle=conn, msg='目标服务器没有任何数据')
+                    self.send_socket_info(handle=conn, msg='服务端没有任何数据')
 
                 expect_info = ['不需要更新', '开始更新']
                 socket_data = self.receive_socket_info(handle=conn, expected_msg=expect_info)
@@ -224,9 +234,9 @@ class SocketFileSharing(object):
                     if expect_info[0] in socket_data:
                         break
 
-                    # 文件接收确认
+                    # 文件详情接收确认
                     file_name, file_size, file_md5 = socket_data.split(expect_info[1])[-1].split(self.socket_separator)
-                    self.send_socket_info(handle=conn, msg='服务端已收到文件描述')
+                    self.send_socket_info(handle=conn, msg='服务端已收到文件详情')
 
                     # TODO 判断文件是否在文件夹中，最后实现，单独加一个函数来处理
                     # files = file_name.split(self.system_separator)
@@ -235,7 +245,7 @@ class SocketFileSharing(object):
                     #         file_name = each
                     #         break
 
-                    # 接收客户端发送的文件
+                    # 接收客户端发送的文件，将二进制全部保存到python变量中
                     data_content = ''.encode()
                     while True:
                         socket_data = self.receive_socket_info(handle=conn, expected_msg='', do_decode=False)
@@ -256,45 +266,62 @@ class SocketFileSharing(object):
                     else:
                         self.send_socket_info(handle=conn, msg='服务端写入文件成功')
 
-                self.server_in_progress = False
                 server.close()
                 time.sleep(self.waiting_time)
 
             except Exception as ex:
-                self.server_in_progress = False
                 self.print_info(msg='服务端发生错误: {}, 正在重新启动...'.format(ex))
                 if server:
                     server.close()
                 time.sleep(self.waiting_time)
+            finally:
+                # 每次服务端被请求后，更新最新的文件列表到self.latest_file_list
+                self.latest_file_list = self.get_local_all_file()
+
+    def check_local_file_status(self):
+        """
+        检查本地目录下的所有文件是否有变动，如果有变动跳出循环
+        :return:
+        """
+        for _ in range(self.automatic_sync_time):
+            all_file = self.get_local_all_file()
+            if all_file:
+                if all_file != self.latest_file_list:
+                    break
+            time.sleep(1)
+        else:
+            self.print_info(side='client', msg='到达同步时间，开始自动同步！')
 
     def start_client_request_file_sync(self):
         """
-        启动客户端间隔访问每个其他服务器请求文件同步
+        启动客户端访问其他服务端请求文件同步
+        触发机制:
+            1. 当本地目录下有任一文件信息发生变动，如：文件名、文件大小、文件md5
+            2. 添加或删除文件
+            3. 每隔 self.automatic_sync_time 秒，自动请求同步一次
         :return:
         """
         while True:
+            # 循环读取本地目录下的所有文件，判断是否启动客户端
+            self.check_local_file_status()
+
             client = None
-            for each_host in self.other_host_ip:  # 循环连接每一个其他服务器
-                try:
-                    client = self.setup_client_side(each_host)  # 配置Client访问指定的Server端
-                    client.settimeout(3)
+            try:
+                # 启动客户端
+                for each_host in self.other_host_ip:  # 循环连接每一个其他服务端请求文件同步
+                    client = self.setup_client_side(each_host)  # 配置客户端
+                    # client.settimeout(5)
 
-                    if self.server_in_progress:  # 如果当前服务端正在被其他客户端访问，阻塞与其交互，等待服务端释放
-                        self.send_socket_info(handle=client, side='client', msg='正在与其他服务器同步，请稍等...')
-                        client.close()
-                        continue
-
+                    # 与服务端握手
                     self.send_socket_info(handle=client, side='client', msg='客户端已就绪')
-                    self.client_in_progress = True
-
                     self.receive_socket_info(handle=client, side='client', expected_msg='服务端已就绪')
-                    self.send_socket_info(handle=client, side='client', msg='请求服务端文件列表')
 
+                    self.send_socket_info(handle=client, side='client', msg='请求服务端文件列表')
                     socket_data = self.receive_socket_info(handle=client, side='client', expected_msg='')
 
                     all_file = self.get_local_all_file()
                     if all_file:
-                        if '目标服务器没有任何数据' in socket_data:
+                        if '服务端没有任何数据' in socket_data:
                             need_sync_files = all_file
                         else:
                             # 取出服务端所有的文件信息
@@ -303,7 +330,6 @@ class SocketFileSharing(object):
                                 server_file_mapping[server_file['file']] = server_file
 
                             server_files = [i for i in server_file_mapping.keys()]  # 取出服务端所有的文件名
-                            print('server_files11: {}'.format(server_files))
 
                             # 判断需要传输到服务端的文件
                             need_sync_files = []
@@ -322,7 +348,7 @@ class SocketFileSharing(object):
                             self.send_socket_info(handle=client, side='client', msg='开始更新')
                             self.receive_socket_info(handle=client, side='client', expected_msg='服务端已收到更新请求')
 
-                            for each_file in need_sync_files:
+                            for each_file in need_sync_files:  # 循环传输每一个文件
                                 file_name = each_file['file']
                                 file_size = each_file['size']
                                 file_md5 = each_file['md5']
@@ -336,10 +362,11 @@ class SocketFileSharing(object):
                                     # 发送文件名、文件大小、md5值到服务端
                                     file_info = f'{file_name}{self.socket_separator}{file_size}{self.socket_separator}{file_md5}'
                                     self.send_socket_info(handle=client, side='client', msg=f'文件详情: {file_info}')
-                                    self.receive_socket_info(handle=client, side='client', expected_msg='服务端已收到文件描述')
+                                    self.receive_socket_info(handle=client, side='client', expected_msg='服务端已收到文件详情')
 
-                                    # 发送文件到服务端
-                                    progress = tqdm(range(each_file['size']), f'发送: {file_name}', unit='B', unit_divisor=1024)
+                                    # 发送文件内容到服务端
+                                    progress = tqdm.tqdm(range(each_file['size']), f'发送: {file_name}',
+                                                         unit='B', unit_divisor=1024)
                                     with open(each_file['file'], 'rb') as rf:
                                         for _ in progress:
                                             # 读取文件
@@ -368,17 +395,20 @@ class SocketFileSharing(object):
                         self.send_socket_info(handle=client, side='client', msg='不需要更新')
 
                     client.close()
-                    self.client_in_progress = False
                     time.sleep(self.waiting_time)
 
-                except Exception as ex:
-                    self.client_in_progress = False
-                    self.print_info(side='client', msg='客户端发生错误：{}'.format(ex))
-                    if client:
-                        client.close()
-                    time.sleep(self.waiting_time)
+            except Exception as ex:
+                self.print_info(side='client', msg='客户端发生错误：{}'.format(ex))
+                if client:
+                    client.close()
+                time.sleep(self.waiting_time)
 
     def main(self):
+        # 记录本地目录下最初的所有文件
+        all_file = self.get_local_all_file()
+        if all_file:
+            self.latest_file_list = all_file
+
         threads = []
         # 配置所有线程
         start_server_forever_listen = threading.Thread(target=self.start_server_forever_listen)
@@ -394,7 +424,7 @@ class SocketFileSharing(object):
 
 
 if __name__ == '__main__':
-    file_sharing = SocketFileSharing(other_host_ip=[('127.0.0.1', 9999)],
-                                     local_host_ip=('127.0.0.1', 6666),
-                                     file_directory='task')
-    file_sharing.main()
+    file_sync = SocketFileSync(local_host_ip=('127.0.0.1', 9999),
+                               other_host_ip=[('127.0.0.1', 6666)],
+                               file_directory='task')
+    file_sync.main()

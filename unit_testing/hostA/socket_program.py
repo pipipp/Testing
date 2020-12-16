@@ -28,8 +28,9 @@ class SocketFileSync(object):
         self.maximum_transfer_size = 1073741824  # 文件传输上限1G
         self.buffer_size = 1024  # Socket buffer size
         self.waiting_time = 5  # 所有的time.sleep()时间
-        self.automatic_sync_time = 10  # 客户端自动访问其他服务端同步时间
+        self.automatic_sync_time = 10  # 客户端自动访问其他服务端的等待时间
 
+        self.latest_file_list = []  # 记录最新的文件列表，随着本地目录下的文件更改而更新
         self.socket_separator = '<SEP>'
         self.system_separator = '\\'
 
@@ -190,10 +191,11 @@ class SocketFileSync(object):
     def start_server_forever_listen(self):
         """
         启动服务端永久监听，提供服务端和客户端的文件同步功能
-        服务端事务功能：
+        服务端事务：
             1. 提供本地目录下所有文件的信息给客户端
             2. 接收客户端传送过来的文件，并写入到本地目录
             3. 检查传送后的文件信息是否有误，如果有误实现重传功能
+            4. 实时更新 self.latest_file_list 的值
         :return:
         """
         while True:
@@ -272,6 +274,23 @@ class SocketFileSync(object):
                 if server:
                     server.close()
                 time.sleep(self.waiting_time)
+            finally:
+                # 每次服务端被请求后，更新最新的文件列表到self.latest_file_list
+                self.latest_file_list = self.get_local_all_file()
+
+    def check_local_file_status(self):
+        """
+        检查本地目录下的所有文件是否有变动，如果有变动跳出循环
+        :return:
+        """
+        for _ in range(self.automatic_sync_time):
+            all_file = self.get_local_all_file()
+            if all_file:
+                if all_file != self.latest_file_list:
+                    break
+            time.sleep(1)
+        else:
+            self.print_info(side='client', msg='到达同步时间，开始自动同步！')
 
     def start_client_request_file_sync(self):
         """
@@ -283,13 +302,14 @@ class SocketFileSync(object):
         :return:
         """
         while True:
-
-            # TODO 判断是否启动客户端
+            # 循环读取本地目录下的所有文件，判断是否启动客户端
+            self.check_local_file_status()
 
             client = None
             try:
+                # 启动客户端
                 for each_host in self.other_host_ip:  # 循环连接每一个其他服务端请求文件同步
-                    client = self.setup_client_side(each_host)  # 配置Client访问指定的Server端
+                    client = self.setup_client_side(each_host)  # 配置客户端
                     # client.settimeout(5)
 
                     # 与服务端握手
@@ -384,6 +404,11 @@ class SocketFileSync(object):
                 time.sleep(self.waiting_time)
 
     def main(self):
+        # 记录本地目录下最初的所有文件
+        all_file = self.get_local_all_file()
+        if all_file:
+            self.latest_file_list = all_file
+
         threads = []
         # 配置所有线程
         start_server_forever_listen = threading.Thread(target=self.start_server_forever_listen)
