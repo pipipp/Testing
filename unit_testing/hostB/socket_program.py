@@ -28,7 +28,7 @@ class SocketFileSync(object):
         self.maximum_transfer_size = 1073741824  # 文件传输上限1G
         self.buffer_size = 1024  # Socket buffer size
         self.waiting_time = 5  # 所有的time.sleep()时间
-        self.automatic_sync_time = 10  # 客户端自动访问其他服务端的等待时间
+        self.automatic_sync_time = 10  # 自动同步的等待时间
 
         self.latest_file_list = []  # 记录最新的文件列表，随着本地目录下的文件更改而更新
         self.socket_separator = '<SEP>'
@@ -75,11 +75,11 @@ class SocketFileSync(object):
         :param file_name: 被读取的文件
         :return: md5 string
         """
-        with open(file_name, 'r', encoding='utf-8') as file:
+        with open(file_name, 'rb') as file:
             file_data = file.read()
 
         diff_check = hashlib.md5()
-        diff_check.update(file_data.encode())
+        diff_check.update(file_data)
         md5_code = diff_check.hexdigest()
         return md5_code
 
