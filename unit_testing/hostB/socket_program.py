@@ -251,11 +251,9 @@ class SocketFileSharing(object):
                         wf.write(data_content)
 
                     # 检查文件传输后的size和md5
-                    new_file_size = os.path.getsize(file_name)
+                    new_file_size = str(os.path.getsize(file_name))
                     new_file_md5 = self.get_file_md5(file_name=file_name)
-                    if new_file_size == file_size and new_file_md5 == file_md5:
-                        self.send_socket_info(handle=conn, msg='服务端写入文件成功')
-                    else:
+                    if new_file_size != file_size or new_file_md5 != file_md5:
                         self.send_socket_info(handle=conn, msg='服务端写入文件有误，请重新传送...')
 
                 self.server_in_progress = False
@@ -353,10 +351,9 @@ class SocketFileSharing(object):
 
                                     # 确认文件传输后的size和md5
                                     socket_data = self.receive_socket_info(handle=client, side='client', expected_msg='')
-                                    if '服务端写入文件成功' in socket_data:
-                                        break
-                                    else:
+                                    if '服务端写入文件有误' in socket_data:
                                         continue  # 如果服务端确认有误，retry
+                                    break
 
                             self.send_socket_info(handle=client, side='client', msg='全部更新完毕')
                         else:
