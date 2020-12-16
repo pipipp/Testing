@@ -93,15 +93,20 @@ class SocketFileSharing(object):
             print(f'Client print >> {current_time} - {msg}')
 
     @staticmethod
-    def send_socket_info(handle, side='server', msg=''):
+    def send_socket_info(handle, msg, side='server', do_encode=True):
         """
         发送socket info，并根据side打印不同的前缀信息
         :param handle: socket句柄
-        :param side: 默认server端
         :param msg: 要发送的内容
+        :param side: 默认server端
+        :param do_encode: 是否需要encode，默认True
         :return:
         """
-        handle.send(msg.encode())
+        if do_encode:
+            handle.send(msg.encode())
+        else:
+            handle.send(msg)
+
         current_time = time.strftime('%Y-%m-%d %H:%M:%S')
         if side == 'server':
             print(f'Server send --> {current_time} - {msg}')
@@ -236,8 +241,8 @@ class SocketFileSharing(object):
 
             except Exception as ex:
                 self.print_info(msg='服务端发生错误: {}, 正在重新启动...'.format(ex))
-                if server:
-                    server.close()
+                # if server:
+                #     server.close()
                 time.sleep(1)
                 self.server_in_progress = False
 
@@ -314,7 +319,7 @@ class SocketFileSharing(object):
                                                 break
                                             # 发送文件
                                             self.send_socket_info(handle=client, side='client',
-                                                                  msg=bytes_read.decode())
+                                                                  msg=bytes_read, do_encode=False)
                                             self.receive_socket_info(handle=client, side='client',
                                                                      expected_msg='服务端接收文件成功')
                                             progress.update(len(bytes_read))
