@@ -188,21 +188,18 @@ class SocketFileSharing(object):
         启动服务端永久监听
         :return:
         """
-        server = self.setup_server_side()  # 配置Server端
         while True:
+            server = None
             try:
+                server = self.setup_server_side()  # 配置Server端
                 conn, address = server.accept()
-                self.server_in_progress = True
                 self.print_info(msg='当前连接客户端：{}'.format(address))
 
-                while self.client_in_progress:  # 如果当前客户端正在访问其他服务器，阻塞服务端交互，保持文件同步
-                    self.send_socket_info(handle=conn, msg='目标服务器正在与其他服务器同步，请稍等...')
-                    time.sleep(self.waiting_time)
-                    continue
+                self.receive_socket_info(handle=conn, expected_msg='客户端已就绪')
+                self.send_socket_info(handle=conn, msg='服务端已就绪')
+                self.server_in_progress = True
 
-                self.send_socket_info(handle=conn, msg='服务端已就绪...')
                 self.receive_socket_info(handle=conn, expected_msg='请求服务端文件列表')
-
                 all_file = self.get_local_all_file()
                 if all_file:
                     # 发送服务端所有文件给客户端检查
@@ -255,13 +252,18 @@ class SocketFileSharing(object):
                     new_file_md5 = self.get_file_md5(file_name=file_name)
                     if new_file_size != file_size or new_file_md5 != file_md5:
                         self.send_socket_info(handle=conn, msg='服务端写入文件有误，请重新传送...')
+                    else:
+                        self.send_socket_info(handle=conn, msg='服务端写入文件成功')
 
                 self.server_in_progress = False
+                server.close()
                 time.sleep(self.waiting_time)
 
             except Exception as ex:
                 self.server_in_progress = False
                 self.print_info(msg='服务端发生错误: {}, 正在重新启动...'.format(ex))
+                if server:
+                    server.close()
                 time.sleep(self.waiting_time)
 
     def start_client_request_file_sync(self):
@@ -272,13 +274,14 @@ class SocketFileSharing(object):
         while True:
             client = None
             for each_host in self.other_host_ip:  # 循环连接每一个其他服务器
-
-                while self.server_in_progress:  # 如果当前服务端正在被其他客户端访问，阻塞客户端访问其他服务器，保持文件同步
-                    time.sleep(self.waiting_time)
-                    continue
-
                 try:
                     client = self.setup_client_side(each_host)  # 配置Client访问指定的Server端
+
+                    while self.server_in_progress:  # 如果当前服务端正在被其他客户端访问，阻塞与其交互，等待服务端释放
+                        self.send_socket_info(handle=client, side='client', msg='正在与其他服务器同步，请稍等...')
+                        continue
+
+                    self.send_socket_info(handle=client, side='client', msg='客户端已就绪')
                     self.client_in_progress = True
 
                     self.receive_socket_info(handle=client, side='client', expected_msg='服务端已就绪')
