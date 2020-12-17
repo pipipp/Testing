@@ -25,11 +25,12 @@ class SocketFileSync(object):
         self.file_location = os.path.join(os.getcwd(), file_directory)  # 文件目录绝对路径
         self.build_file_store()  # 创建文件存放目录
 
+        self.waiting_time = 5  # 所有的time.sleep()时间
+        self.socket_timeout_time = 10  # 服务端和客户端的Socket超时时间
+        self.automatic_sync_time = 10  # 文件自动同步的等待时间
+
         self.maximum_transfer_size = 1073741824  # 文件传输上限1G
         self.buffer_size = 1024  # Socket buffer size
-        self.waiting_time = 5  # 所有的time.sleep()时间
-        self.automatic_sync_time = 10  # 自动同步的等待时间
-
         self.latest_file_list = []  # 记录最新的文件列表，随着本地目录下的文件更改而更新
         self.socket_separator = '<SEP>'
         self.system_separator = '\\'
@@ -98,13 +99,14 @@ class SocketFileSync(object):
             print(f'Client print >> {current_time} - {msg}')
 
     @staticmethod
-    def send_socket_info(handle, msg, side='server', do_encode=True):
+    def send_socket_info(handle, msg, side='server', do_encode=True, do_print_info=True):
         """
         发送socket info，并根据side打印不同的前缀信息
         :param handle: socket句柄
         :param msg: 要发送的内容
         :param side: 默认server端
         :param do_encode: 是否需要encode，默认True
+        :param do_print_info: 是否需要打印socket信息，默认True
         :return:
         """
         if do_encode:
@@ -112,19 +114,21 @@ class SocketFileSync(object):
         else:
             handle.send(msg)
 
-        current_time = time.strftime('%Y-%m-%d %H:%M:%S')
-        if side == 'server':
-            print(f'Server send --> {current_time} - {msg}')
-        else:
-            print(f'Client send --> {current_time} - {msg}')
+        if do_print_info:
+            current_time = time.strftime('%Y-%m-%d %H:%M:%S')
+            if side == 'server':
+                print(f'Server send --> {current_time} - {msg}')
+            else:
+                print(f'Client send --> {current_time} - {msg}')
 
-    def receive_socket_info(self, handle, expected_msg, side='server', do_decode=True):
+    def receive_socket_info(self, handle, expected_msg, side='server', do_decode=True, do_print_info=True):
         """
-        接收socket info，判断其返回值，并根据side打印不同的前缀信息
+        循环接收socket info，判断其返回值，直到返回值出现为止，防止socket信息粘连，并根据side打印不同的前缀信息
         :param handle: socket句柄
         :param expected_msg: 期待接受的内容，如果接受内容不在返回结果中，一直循环等待，期待内容可以为字符串，也可以为多个字符串组成的列表或元组
         :param side: 默认server端
         :param do_decode: 是否需要decode，默认True
+        :param do_print_info: 是否需要打印socket信息，默认True
         :return:
         """
         while True:
@@ -133,11 +137,12 @@ class SocketFileSync(object):
             else:
                 socket_data = handle.recv(self.buffer_size)
 
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S')
-            if side == 'server':
-                print(f'Server received ==> {current_time} - {socket_data}')
-            else:
-                print(f'Client received ==> {current_time} - {socket_data}')
+            if do_print_info:
+                current_time = time.strftime('%Y-%m-%d %H:%M:%S')
+                if side == 'server':
+                    print(f'Server received ==> {current_time} - {socket_data}')
+                else:
+                    print(f'Client received ==> {current_time} - {socket_data}')
 
             # 如果expected_msg为空，跳出循环
             if not expected_msg:
@@ -201,9 +206,9 @@ class SocketFileSync(object):
         while True:
             server = None
             try:
-                server = self.setup_server_side()  # 配置Server端
+                server = self.setup_server_side()  # 配置服务端
                 conn, address = server.accept()
-                # conn.settimeout(5)
+                conn.settimeout(self.socket_timeout_time)  # 设置服务端超时时间
                 self.print_info(msg='当前连接客户端：{}'.format(address))
 
                 # 与客户端握手
@@ -310,7 +315,7 @@ class SocketFileSync(object):
                 # 启动客户端
                 for each_host in self.other_host_ip:  # 循环连接每一个其他服务端请求文件同步
                     client = self.setup_client_side(each_host)  # 配置客户端
-                    # client.settimeout(5)
+                    client.settimeout(self.socket_timeout_time)  # 设置客户端超时时间
 
                     # 与服务端握手
                     self.send_socket_info(handle=client, side='client', msg='客户端已就绪')
@@ -364,21 +369,20 @@ class SocketFileSync(object):
                                     self.send_socket_info(handle=client, side='client', msg=f'文件详情: {file_info}')
                                     self.receive_socket_info(handle=client, side='client', expected_msg='服务端已收到文件详情')
 
-                                    # 发送文件内容到服务端
-                                    progress = tqdm.tqdm(range(each_file['size']), f'发送: {file_name}',
-                                                         unit='B', unit_divisor=1024)
-                                    with open(each_file['file'], 'rb') as rf:
-                                        for _ in progress:
-                                            # 读取文件
-                                            bytes_read = rf.read(self.buffer_size)
-                                            if not bytes_read:
-                                                break
-                                            # 发送文件
-                                            self.send_socket_info(handle=client, side='client',
-                                                                  msg=bytes_read, do_encode=False)
-                                            self.receive_socket_info(handle=client, side='client',
-                                                                     expected_msg='服务端接收文件成功')
-                                            progress.update(len(bytes_read))
+                                    # 发送文件内容到服务端，使用tqdm显示发送进度
+                                    with tqdm.tqdm(desc=f'发送: {file_name}', total=file_size, unit='B', unit_divisor=1024) as bar:
+                                        with open(file_name, 'rb') as rf:
+                                            while True:
+                                                # 读取文件
+                                                bytes_read = rf.read(self.buffer_size)
+                                                if not bytes_read:
+                                                    break
+                                                # 发送文件
+                                                self.send_socket_info(handle=client, side='client',
+                                                                      msg=bytes_read, do_encode=False, do_print_info=False)
+                                                self.receive_socket_info(handle=client, side='client',
+                                                                         expected_msg='服务端接收文件成功', do_print_info=False)
+                                                bar.update(len(bytes_read))
 
                                     self.send_socket_info(handle=client, side='client', msg='文件传输完毕')
 
@@ -404,7 +408,7 @@ class SocketFileSync(object):
                 time.sleep(self.waiting_time)
 
     def main(self):
-        # 记录本地目录下最初的所有文件
+        # 记录本地目录下最初的所有文件，用于文件同步
         all_file = self.get_local_all_file()
         if all_file:
             self.latest_file_list = all_file
