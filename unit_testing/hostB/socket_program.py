@@ -193,6 +193,32 @@ class SocketFileSync(object):
         else:
             return []
 
+    def check_transfer_folder_exists(self, files):
+        """
+        检查客户端传送过来的文件所处的文件夹是否存在，如果不存在创建一个新的
+        :param files: 客户端传送过来的文件路径
+        :return:
+        """
+        split_folders = files.split(self.system_separator)  # 切割所有文件夹和文件名
+        folders = split_folders[:-1]  # 截取所有文件夹名
+
+        split_number = -1  # 每次分片的数量
+        check_folder_list = []  # 保存所有需要检查的文件夹
+        for _ in range(len(folders) - 1):
+            check_folder_list.append(self.system_separator.join(split_folders[:split_number]))
+            split_number -= 1
+        check_folder_list.reverse()  # 检查列表反装，文件夹按照从前到后的顺序检查
+
+        self.print_info(msg=f'需要检查的文件夹：{check_folder_list}')
+
+        for each_folder in check_folder_list:  # 循环检查每一个文件夹
+            if not os.path.isdir(each_folder):
+                self.print_info(msg=f'发现 << {each_folder} >> 文件夹不存在')
+                os.mkdir(each_folder)
+                self.print_info(msg=f'创建 >> {each_folder} << 文件夹成功')
+
+        self.print_info(msg=f'全部检查完毕！')
+
     def start_server_forever_listen(self):
         """
         启动服务端永久监听，提供服务端和客户端的文件同步功能
@@ -243,12 +269,8 @@ class SocketFileSync(object):
                     file_name, file_size, file_md5 = socket_data.split(expect_info[1])[-1].split(self.socket_separator)
                     self.send_socket_info(handle=conn, msg='服务端已收到文件详情')
 
-                    # TODO 判断文件是否在文件夹中，最后实现，单独加一个函数来处理
-                    # files = file_name.split(self.system_separator)
-                    # for each in files:  # 先拿到实际的文件名，只涉及一层，后续添加多个文件夹判断功能
-                    #     if '.' in each:
-                    #         file_name = each
-                    #         break
+                    # 检查客户端传送过来的文件所处的文件夹是否存在，如果不存在创建一个新的
+                    self.check_transfer_folder_exists(files=file_name)
 
                     # 接收客户端发送的文件，将二进制全部保存到python变量中
                     data_content = ''.encode()
