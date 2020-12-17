@@ -48,8 +48,10 @@ class SocketFileSync(object):
         :param list other_host_ip: 其他Server端IP，例如：other_host_ip = [192.168.xx.xx, 192.168.xx.xx]
         :param str file_directory: 文件目录名
         """
-        assert isinstance(local_host_ip, str), 'local_host_ip应为字符串类型'
-        assert isinstance(other_host_ip, list), 'other_host_ip应为列表类型'
+        assert local_host_ip, 'local_host_ip 不能为空'
+        assert other_host_ip, 'other_host_ip 不能为空'
+        assert isinstance(local_host_ip, str), 'local_host_ip 应为字符串类型'
+        assert isinstance(other_host_ip, list), 'other_host_ip 应为列表类型'
 
         self.port = 6666  # 所有Socket的连接端口
         self.local_host_ip = (local_host_ip, self.port)
@@ -485,10 +487,14 @@ class SocketFileSync(object):
 
 
 def parameter_testing():
+    """
+    检查所有的参数是否合法、读取本地主机的IP
+    :return:
+    """
     # 输入参数检查
     assert args.ip, '请使用python xx.py --ip 192.168.xx.xx,192.168.xx.xx启动程序'
 
-    # 截取所有的输入参数
+    # 判断所有的输入参数
     all_other_ip = []
     for each in str(args.ip).split(','):  # 循环检查每个IP的格式是否正确
         check_value = re.match(r'^\d+\.\d+\.\d+\.\d+$', each)
@@ -498,17 +504,20 @@ def parameter_testing():
     print(f'所有其他主机的IP：{all_other_ip}')
 
     # 读取本地主机的IP
-    ip_config = os.popen('ipconfig')  # 使用命令获取主机配置信息
+    command = 'ipconfig' if 'win' in sys.platform else 'ifconfig'
+    ip_config = os.popen(command)  # 使用命令获取主机配置信息
     result = re.search(r'IPv4.+? : (\d+\.\d+\.\d+\.\d+)', ip_config.read())  # 使用正则表达式匹配主机IP
     if result:
         local_ip = result.group(1)
+        print(f'本地主机的IP：{local_ip}')
     else:
         raise ValueError('抓取本地主机IP失败，请检查！')
+
     return local_ip, all_other_ip
 
 
 def main():
-    # 检查所有的参数是否合法
+    # 检查所有的参数是否合法、读取本地主机的IP
     local_ip, all_other_ip = parameter_testing()
 
     # 启动Socket
