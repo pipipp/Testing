@@ -1,5 +1,22 @@
 """
 使用Socket实现多主机之间的文件共享和实时同步
+
+==========================
+
+程序启动后将会开启两个多线程永久运行：
+Task1：
+    启动服务端永久监听，提供服务端和客户端的文件同步功能
+    服务端事务：
+        1. 提供本地目录下所有文件的信息给客户端
+        2. 接收客户端传送过来的文件，并写入到本地目录
+        3. 检查传送后的文件信息是否有误，如果有误实现重传功能
+        4. 实时更新 self.latest_file_list 的值
+Task2:
+    启动客户端访问其他服务端请求文件同步
+    触发机制:
+        1. 当本地目录下有任一文件信息发生变动，如：文件名、文件大小、文件md5
+        2. 添加或删除文件（任何格式的文件，包括文件夹）
+        3. 每隔 self.automatic_sync_time 秒，自动请求同步一次
 """
 import os
 import time
@@ -25,15 +42,17 @@ class SocketFileSync(object):
         self.file_location = os.path.join(os.getcwd(), file_directory)  # 文件目录绝对路径
         self.build_file_store()  # 创建文件存放目录
 
-        self.waiting_time = 5  # 所有的time.sleep()时间
-        self.socket_timeout_time = 10  # 服务端和客户端的Socket超时时间
-        self.automatic_sync_time = 10  # 文件自动同步的等待时间
+        self.waiting_time = 5  # 所有的time.sleep()时间，单位秒
+        self.socket_timeout_time = 10  # 服务端和客户端的Socket超时时间，单位秒
+        self.automatic_sync_time = 10  # 客户端自动启动同步的周期时间，单位秒
 
-        self.maximum_transfer_size = 1073741824  # 文件传输上限1G
-        self.buffer_size = 1024  # Socket buffer size
+        self.maximum_transfer_size = 1073741824  # 文件传输上限1G，单位b
+        self.buffer_size = 1024  # Socket buffer size，单位b
+
+        self.socket_separator = '<SEP>'  # Socket分割符
+        self.system_separator = '\\'  # 系统分隔符
+
         self.latest_file_list = []  # 记录最新的文件列表，随着本地目录下的文件更改而更新
-        self.socket_separator = '<SEP>'
-        self.system_separator = '\\'
 
     def setup_server_side(self):
         """
@@ -324,7 +343,7 @@ class SocketFileSync(object):
         启动客户端访问其他服务端请求文件同步
         触发机制:
             1. 当本地目录下有任一文件信息发生变动，如：文件名、文件大小、文件md5
-            2. 添加或删除文件
+            2. 添加或删除文件（任何格式的文件，包括文件夹）
             3. 每隔 self.automatic_sync_time 秒，自动请求同步一次
         :return:
         """
