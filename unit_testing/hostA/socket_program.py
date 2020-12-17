@@ -266,10 +266,9 @@ class SocketFileSync(object):
             4. 实时更新 self.latest_file_list 的值
         :return:
         """
+        server = self.setup_server_side()  # 配置服务端
         while True:
-            server = None
             try:
-                server = self.setup_server_side()  # 配置服务端
                 conn, address = server.accept()
                 conn.settimeout(self.socket_timeout_time)  # 设置服务端超时时间
                 self.print_info(msg='当前连接客户端：{}'.format(address))
@@ -330,13 +329,13 @@ class SocketFileSync(object):
                     else:
                         self.send_socket_info(handle=conn, msg='服务端写入文件成功')
 
-                server.close()
+                # server.close()
                 time.sleep(self.waiting_time)
 
             except Exception as ex:
                 self.print_info(msg='服务端发生错误: {}, 正在重新启动...'.format(ex))
-                if server:
-                    server.close()
+                # if server:
+                #     server.close()
                 time.sleep(self.waiting_time)
             finally:
                 # 每次服务端被请求后，更新最新的文件列表到self.latest_file_list
