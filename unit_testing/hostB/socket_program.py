@@ -1,7 +1,7 @@
 """
 使用Socket实现多主机之间的文件共享和实时同步
 
-==========================
+====================================
 
 程序启动后将会开启两个多线程永久运行：
 Task1：
@@ -17,13 +17,26 @@ Task2:
         1. 当本地目录下有任一文件信息发生变动，如：文件名、文件大小、文件md5
         2. 添加或删除文件（任何格式的文件，包括文件夹）
         3. 每隔 self.automatic_sync_time 秒，自动请求同步一次
+
+***********************************************
+使用命令行启动：多个其他主机用逗号隔开
+python xx.py --ip 192.168.xx.xx,192.168.xx.xx
+***********************************************
 """
+import re
 import os
+import sys
 import time
 import tqdm
 import socket
 import hashlib
+import argparse
 import threading
+
+# 定义命令行参数
+parser = argparse.ArgumentParser()
+parser.add_argument("-ip", "--ip", help="请填入其他主机的IP，例如：--ip 192.168.xx.xx,192.168.xx.xx")
+args = parser.parse_args()
 
 
 class SocketFileSync(object):
@@ -31,11 +44,15 @@ class SocketFileSync(object):
     def __init__(self, local_host_ip, other_host_ip, file_directory='task'):
         """
         Socket初始化配置
-        :param local_host_ip: 本地Server端IP和端口，元组类型：(ip, port)
-        :param other_host_ip: 其他Server端IP和端口，列表类型：[(ip, port), (ip, port)]
-        :param file_directory: 文件目录名
+        :param str local_host_ip: 本地Server端IP，例如：local_host_ip = '192.168.xx.xx'
+        :param list other_host_ip: 其他Server端IP，例如：other_host_ip = [192.168.xx.xx, 192.168.xx.xx]
+        :param str file_directory: 文件目录名
         """
-        self.local_host_ip = local_host_ip
+        assert isinstance(local_host_ip, str), 'local_host_ip应为字符串类型'
+        assert isinstance(other_host_ip, list), 'other_host_ip应为列表类型'
+
+        self.port = 6666  # 所有Socket的连接端口
+        self.local_host_ip = (local_host_ip, self.port)
         self.other_host_ip = other_host_ip
         self.file_directory = file_directory
 
@@ -50,8 +67,7 @@ class SocketFileSync(object):
         self.buffer_size = 1024  # Socket buffer size，单位b
 
         self.socket_separator = '<SEP>'  # Socket分割符
-        self.system_separator = '\\'  # 系统分隔符
-
+        self.system_separator = '\\' if 'win' in sys.platform else '/'  # 系统分隔符
         self.latest_file_list = []  # 记录最新的文件列表，随着本地目录下的文件更改而更新
 
     def setup_server_side(self):
@@ -72,7 +88,7 @@ class SocketFileSync(object):
         :param other_host: 被连接的其他主机
         :return: client handle
         """
-        ip, port = other_host
+        ip, port = other_host, self.port
         client = socket.socket()  # 实例化Socket
         self.print_info(side='client', msg=f'开始连接服务端 {ip}:{port} ...')
 
@@ -468,8 +484,39 @@ class SocketFileSync(object):
             thread.start()
 
 
-if __name__ == '__main__':
-    file_sync = SocketFileSync(local_host_ip=('127.0.0.1', 9999),
-                               other_host_ip=[('127.0.0.1', 6666)],
+def parameter_testing():
+    # 输入参数检查
+    assert args.ip, '请使用python xx.py --ip 192.168.xx.xx,192.168.xx.xx启动程序'
+
+    # 截取所有的输入参数
+    all_other_ip = []
+    for each in str(args.ip).split(','):  # 循环检查每个IP的格式是否正确
+        check_value = re.match(r'^\d+\.\d+\.\d+\.\d+$', each)
+        if not check_value:
+            raise ValueError('这个IP格式有错误：{}'.format(each))
+        all_other_ip.append(each)
+    print(f'所有其他主机的IP：{all_other_ip}')
+
+    # 读取本地主机的IP
+    ip_config = os.popen('ipconfig')  # 使用命令获取主机配置信息
+    result = re.search(r'IPv4.+? : (\d+\.\d+\.\d+\.\d+)', ip_config.read())  # 使用正则表达式匹配主机IP
+    if result:
+        local_ip = result.group(1)
+    else:
+        raise ValueError('抓取本地主机IP失败，请检查！')
+    return local_ip, all_other_ip
+
+
+def main():
+    # 检查所有的参数是否合法
+    local_ip, all_other_ip = parameter_testing()
+
+    # 启动Socket
+    file_sync = SocketFileSync(local_host_ip=local_ip,
+                               other_host_ip=all_other_ip,
                                file_directory='task')
     file_sync.main()
+
+
+if __name__ == '__main__':
+    main()
