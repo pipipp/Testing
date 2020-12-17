@@ -506,7 +506,9 @@ def parameter_testing():
     # 读取本地主机的IP
     command = 'ipconfig' if 'win' in sys.platform else 'ifconfig'
     ip_config = os.popen(command)  # 使用命令获取主机配置信息
-    result = re.search(r'IPv4.+? : (\d+\.\d+\.\d+\.\d+)', ip_config.read())  # 使用正则表达式匹配主机IP
+
+    regex = r'IPv4.+? : (\d+\.\d+\.\d+\.\d+)' if 'win' in sys.platform else r'mtu 1500\n.+? (\d+\.\d+\.\d+\.\d+).+?netmask'
+    result = re.search(regex, ip_config.read())  # 使用正则表达式匹配主机IP
     if result:
         local_ip = result.group(1)
         print(f'本地主机的IP：{local_ip}')
