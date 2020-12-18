@@ -1,5 +1,5 @@
 """
-Run the log download function manually
+Manually run the log download function, you can download any format of the log
 """
 # -*- coding:utf-8 -*-
 # @Time     : 2020/12/11

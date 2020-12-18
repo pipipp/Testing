@@ -37,6 +37,7 @@ Use examples:
 # -*- coding:utf-8 -*-
 # @Time     : 2020/8/18
 # @Author   : Evan Liu
+# @Python   : 2.0+
 
 import sys
 sys.path.append('/opt/cisco/constellation')

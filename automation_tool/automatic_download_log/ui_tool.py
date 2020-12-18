@@ -5,6 +5,7 @@ After running, a GUI window opens and you can select the test log within the spe
 # -*- coding:utf-8 -*-
 # @Time     : 2020/03/21
 # @Author   : Evan Liu
+# @Python   : 3.0+
 
 import os
 import re

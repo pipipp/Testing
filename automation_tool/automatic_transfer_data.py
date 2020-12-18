@@ -9,6 +9,7 @@ python version: 3.7.4
 # -*- coding:utf-8 -*-
 # @Time     : 2019/12/27
 # @Author   : Evan Liu
+# @Python   : 2.0+
 
 import pyodbc
 import time
