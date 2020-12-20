@@ -20,6 +20,6 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
         TX packets 227768  bytes 79280128 (75.6 MiB)
 """
 
-result = re.search(r'mtu.+?\n.+?inet (\d+\.\d+\.\d+\.\d+).+?netmask', a)
+result = re.search(r'inet (\d+\.\d+\.\d+\.\d+)', a)
 if result:
     print(result.group(1))
