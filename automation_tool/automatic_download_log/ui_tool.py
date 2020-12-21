@@ -1,4 +1,5 @@
 """
+This crawler tool was developed in order to improve the efficiency of test analysis
 This is a quick download tool for CCC website test logs（https://cesium.cisco.com/）
 After running, a GUI window opens and you can select the test log within the specified date for batch download
 
