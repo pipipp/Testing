@@ -1,6 +1,22 @@
 """
 This is a quick download tool for CCC website test logs（https://cesium.cisco.com/）
 After running, a GUI window opens and you can select the test log within the specified date for batch download
+
+=========================================================
+Update history:
+
+# 2020/04/06 update -> Version: 1.7
+    1. Updated GUI layout and added some more human features
+
+# 2020/11/12 update -> Version: 2.0
+    1. Website login authentication interface upgrade
+    2. Optimized the prompt message of Failure
+    3. Added the ability to force a process to be deleted when exiting a GUI
+
+# 2020/12/21 update -> Version: 2.6
+    1. Add the ability to customize the download log type
+
+=========================================================
 """
 # -*- coding:utf-8 -*-
 # @Time     : 2020/03/21
@@ -204,7 +220,7 @@ class CCCSpider(object):
         else:
             return None
 
-    def get_measurement_data(self, serial_number='', download_file_list=['sequence_log'], request_params={}):
+    def get_measurement_data(self, serial_number='', download_file_list=[], request_params={}):
         """
         Gets the specified measurement file for the specified serial number
         :param str serial_number: Test serial number
@@ -218,8 +234,9 @@ class CCCSpider(object):
             measures_data = resp.json()
             for each_data in measures_data['measurements']:  # Walk through each measurement file
                 for file_type in download_file_list:
-                    if file_type in each_data['limit_id']:  # Matches the specified file type
-                        yield (file_type, each_data['measurement'])  # return the measurement type and id for download
+                    if file_type.upper() == each_data.get('name', '').upper():  # Matches the specified file type
+                        # return the measurement name and id for download
+                        yield each_data['name'], each_data['measurement']
             else:
                 yield None
 
@@ -558,7 +575,7 @@ class SpiderGui(object):
         self.build_storage_folder()
         self.root = tk.Tk()
         self.root.geometry('640x410')
-        self.root.title('Download CCC Test Log Tool                         @Author: Evan Liu | @Version: 2.0')
+        self.root.title('Download CCC Test Log Tool                         @Author: Evan Liu | @Version: 2.6')
 
         self.build_date_frame()
         self.build_request_data_frame()
@@ -567,6 +584,7 @@ class SpiderGui(object):
         self.build_button_frame()
         self.set_gui_center(window=self.root, x=2.5, y=4)
         self.logined_flag = False
+        self.custom_download_log = []
 
     def build_display_board_frame(self):
         frames = tk.Frame(relief='ridge', borderwidth=1)
@@ -621,9 +639,8 @@ class SpiderGui(object):
                                        offvalue='', onvalue='UUT_buffer')
         enable_check3.select()
         enable_check3.grid(row=2, column=0, sticky=tk.W)
-        self.use_debug = tk.StringVar()
-        tk.Checkbutton(frames, text="Use Debug DB", variable=self.use_debug,
-                       offvalue='', onvalue='dev').grid(row=3, column=0, sticky=tk.W)
+        tk.Button(frames, text='Custom Download', command=self.open_custom_window,
+                  bg='LightGrey').grid(row=3, column=0, sticky=tk.W, padx=3)
 
         tk.Label(frames, text='Select Status').grid(row=0, column=1, sticky=tk.W, padx=30)
         self.fail_status = tk.StringVar()
@@ -638,6 +655,88 @@ class SpiderGui(object):
         tk.Checkbutton(frames, text="Aborted", variable=self.about_status,
                        offvalue='', onvalue='A').grid(row=3, column=1, sticky=tk.W, padx=30)
         frames.grid(row=2, column=0, sticky=tk.NSEW)
+
+    @property
+    def all_download_log(self):
+        """
+        Integrate all download log types
+        :return:
+        """
+        all_download_log = []
+        for status in [self.seq_log.get(), self.uut_buffer.get()]:
+            if status:
+                all_download_log.append(status)
+        if self.custom_download_log:
+            all_download_log.extend(self.custom_download_log)
+        return all_download_log
+
+    def display_all_download_type(self):
+        """
+        Display all download type
+        :return:
+        """
+        self.display_download_type.delete(1.0, tk.END)
+        if self.all_download_log:
+            for index, each in enumerate(self.all_download_log, 1):
+                self.display_download_type.insert(tk.END, '{}: {}\n'.format(index, each))
+        else:
+            self.display_download_type.insert(tk.END, 'Null')
+
+    def add_download_type(self):
+        """
+        Add the customized download type
+        :return:
+        """
+        input_info = self.custom_type.get(1.0, tk.END).strip()
+        if input_info:
+            if len(input_info.splitlines()) > 1:
+                _result = []
+                for value in input_info.splitlines():
+                    if value:
+                        _result.append(value)
+                _result = ','.join(_result)
+            else:
+                _result = input_info
+        else:
+            _result = ''
+
+        if _result:
+            for each in _result.split(','):
+                if each in self.all_download_log:
+                    messagebox.showwarning('Warning', f'The download type "{each}" already exists')
+                    self.display_all_download_type()
+                    return
+                self.custom_download_log.append(each)
+            self.display_all_download_type()
+        else:
+            messagebox.showwarning('Warning', 'Please add the download type\nfor example: UUT_timestamp')
+
+    # 2020/12/21 update, Add the ability to customize the download log type
+    def open_custom_window(self):
+        self.custom_window = tk.Toplevel(self.root)
+        self.custom_window.title('Custom Download')
+        self.custom_window.wm_attributes("-topmost", True)
+
+        tk.Label(self.custom_window, text='Below are all the download types that have been added')\
+            .grid(row=0, column=0, sticky=tk.W, columnspan=2)
+        self.display_download_type = tk.Text(self.custom_window, width=45, height=8)
+        self.display_all_download_type()
+        self.display_download_type.grid(row=1, column=0, columnspan=2, sticky=tk.W)
+
+        tk.Label(self.custom_window, text='Add custom download type')\
+            .grid(row=2, column=0, sticky=tk.W, columnspan=2)
+        tk.Label(self.custom_window, text='From CCC website: "Limit Name"') \
+            .grid(row=3, column=0, sticky=tk.W, columnspan=2)
+
+        self.custom_type = tk.Text(self.custom_window, width=45, height=5)
+        self.custom_type.grid(row=4, column=0, columnspan=2, sticky=tk.W)
+
+        tk.Button(self.custom_window, text='Add', command=self.add_download_type,
+                  bg='MediumSpringGreen').grid(row=5, column=0, sticky=tk.W, padx=60, ipadx=8)
+        tk.Button(self.custom_window, text='Cancel', command=self.custom_window.destroy,
+                  bg='Tan').grid(row=5, column=1, sticky=tk.W)
+
+        self.set_gui_center(window=self.custom_window, x=1.4, y=3)
 
     def build_request_data_frame(self):
         frames = tk.Frame(relief='ridge', borderwidth=5)
@@ -766,15 +865,9 @@ class SpiderGui(object):
 
         # Format input parameter (download log type)
         select_download_log = []
-        for status in [self.seq_log.get(), self.uut_buffer.get()]:
+        for status in self.all_download_log:
             if status:
                 select_download_log.append(status)
-
-        # Check use_debug
-        if not self.use_debug.get():
-            use_debug = None
-        else:
-            use_debug = self.use_debug.get()
 
         final_result = {
             'start_time': self.start_time.get(),
@@ -785,7 +878,6 @@ class SpiderGui(object):
             'machine': input_result[3],
             'select_status': select_status,
             'select_download_log': select_download_log,
-            'use_debug': use_debug,
         }
 
         # Check start time and end time
@@ -896,7 +988,7 @@ class SpiderGui(object):
             'start_time': all_input_info['start_time'],
             'end_time': all_input_info['end_time'],
             'dataset': 'test_results',
-            'database': all_input_info['use_debug'],
+            'database': None,
             'start': 0,
             'limit': '5000',
             'user': '',

@@ -1,5 +1,5 @@
 """
-Manually run the log download function, you can download any format of the log
+Unit test log download feature
 """
 # -*- coding:utf-8 -*-
 # @Time     : 2020/12/11
@@ -359,7 +359,7 @@ class CCCSpider(object):
         params = {
             'test': '',
             'dataset': 'test_results',
-            'database': '',
+            'database': None,
             'start': 0,
             'limit': '5000',
             'user': '',
