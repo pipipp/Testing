@@ -719,25 +719,32 @@ class SpiderGui(object):
         self.custom_window.wm_attributes("-topmost", True)
 
         tk.Label(self.custom_window, text='Below are all the download types that have been added')\
-            .grid(row=0, column=0, sticky=tk.W, columnspan=2)
+            .grid(row=0, column=0, sticky=tk.W, columnspan=4)
         self.display_download_type = tk.Text(self.custom_window, width=45, height=8)
         self.display_all_download_type()
-        self.display_download_type.grid(row=1, column=0, columnspan=2, sticky=tk.W)
+        self.display_download_type.grid(row=1, column=0, columnspan=4, sticky=tk.W)
 
         tk.Label(self.custom_window, text='Add custom download type')\
-            .grid(row=2, column=0, sticky=tk.W, columnspan=2)
+            .grid(row=2, column=0, sticky=tk.W, columnspan=4)
         tk.Label(self.custom_window, text='From CCC website: "Limit Name"') \
-            .grid(row=3, column=0, sticky=tk.W, columnspan=2)
+            .grid(row=3, column=0, sticky=tk.W, columnspan=4)
 
         self.custom_type = tk.Text(self.custom_window, width=45, height=5)
-        self.custom_type.grid(row=4, column=0, columnspan=2, sticky=tk.W)
+        self.custom_type.grid(row=4, column=0, columnspan=4, sticky=tk.W)
 
         tk.Button(self.custom_window, text='Add', command=self.add_download_type,
-                  bg='MediumSpringGreen').grid(row=5, column=0, sticky=tk.W, padx=60, ipadx=8)
+                  bg='MediumSpringGreen').grid(row=5, column=0, sticky=tk.W, ipadx=8)
+        tk.Button(self.custom_window, text='Cleanup', command=self.clear_all_custom_value,
+                  bg='#AFEEEE').grid(row=5, column=1, sticky=tk.E)
         tk.Button(self.custom_window, text='Cancel', command=self.custom_window.destroy,
-                  bg='Tan').grid(row=5, column=1, sticky=tk.W)
+                  bg='Tan').grid(row=5, column=3, sticky=tk.E)
 
-        self.set_gui_center(window=self.custom_window, x=1.4, y=3)
+        self.set_gui_center(window=self.custom_window, x=1.4, y=3.7)
+
+    def clear_all_custom_value(self):
+        if self.custom_download_log:
+            self.custom_download_log.clear()
+        self.display_all_download_type()
 
     def build_request_data_frame(self):
         frames = tk.Frame(relief='ridge', borderwidth=5)
