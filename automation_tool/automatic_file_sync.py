@@ -531,7 +531,7 @@ def main():
     # 启动Socket
     file_sync = SocketFileSync(local_host_ip=local_ip,
                                other_host_ip=all_other_ip,
-                               file_directory='task')
+                               file_directory='Socket_Files')
     file_sync.main()
 
 
