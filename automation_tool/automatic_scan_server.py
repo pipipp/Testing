@@ -1,19 +1,7 @@
 """
-Scan all apollo server program mapping and program release versions and apollo package versions
+Use SSH to remotely scan all Apollo server program mapping and program release versions and apollo package versions
 All scan results are written to the CSV file and saved to the current path,
 and you can also email to the designated cisco mailbox
-
-CSV file sample:
-Station,Test_area,Product_line,All_config_mapping,Redundant_mapping,Package_version,Apollo_version,Error_info
-fxcapp923,['PCBP2'],['Vancouver'],"1: cd /opt/cisco/constellation/apollo/scripts/wnbu  result: trunk -> /opt/cisco/scripts/prod/wnbu/trunk
-                                   2: cd /opt/cisco/constellation/apollo/config  result: fxcapp923_config.py -> /opt/cisco/constellation/apollo/scripts/wnbu/trunk/trunk/stations/foc/fxcapp923.py",
-                                   empty,wnbu-trunk 5.72,Apollo-117-5,empty
-fxcapp924,['PCBP2'],['Vancouver'],"1: cd /opt/cisco/constellation/apollo/scripts/wnbu  result: trunk -> /opt/cisco/scripts/prod/wnbu/trunk
-                                   2: cd /opt/cisco/constellation/apollo/config  result: fxcapp924_config.py -> /opt/cisco/constellation/apollo/scripts/wnbu/trunk/trunk/stations/foc/fxcapp924.py",
-                                   empty,wnbu-trunk 5.72,Apollo-117-5,empty
-fxcapp926,['PCBP2'],['Saltspring'],"1: cd /opt/cisco/constellation/apollo/scripts/wnbu  result: trunk -> /opt/cisco/scripts/prod/wnbu/trunk
-                                    2: cd /opt/cisco/constellation/apollo/config  result: fxcapp926_config.py -> /opt/cisco/constellation/apollo/scripts/wnbu/trunk/trunk/stations/foc/fxcapp926.py",
-                                    empty,wnbu-trunk 5.72,Apollo-117-5,empty
 
 Use crontab to run Python programs regularly on a Linux system
 ===================================================================
@@ -28,7 +16,7 @@ cat /var/spool/mail/{enter your username}
 Use examples:
 1. Open the terminal window and enter "crontab -e" into VI edit mode
 2. Type the command [usage: minute   hour   day   month   week   command]
-   0 8 * * 1 /usr/local/bin/python /tftpboot/scan_machine_config_mapping.py (It starts every Monday at 8 a.m)
+   0 8 * * 1 /usr/local/bin/python /tftpboot/automatic_scan_server.py (It starts every Monday at 8 a.m)
 3. Save and exit when you have finished typing
 4. Type "crontab -l" to see the tasks that have been executed and confirm that they were executed successfully
 ===================================================================
@@ -42,7 +30,6 @@ Use examples:
 
 import sys
 sys.path.append('/opt/cisco/constellation')
-
 import os
 import re
 import time
