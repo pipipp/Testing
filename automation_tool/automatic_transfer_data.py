@@ -9,6 +9,7 @@ This program will start three multi-threads:
 # @Time     : 2019/12/27
 # @Author   : Evan Liu
 # @Python   : 3.0+
+# @System   : Windows <==> Linux
 
 import pyodbc
 import time

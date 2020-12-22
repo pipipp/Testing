@@ -38,9 +38,11 @@ Use examples:
 # @Time     : 2020/8/18
 # @Author   : Evan Liu
 # @Python   : 2.0+
+# @System   : Linux
 
 import sys
 sys.path.append('/opt/cisco/constellation')
+
 import os
 import re
 import time
