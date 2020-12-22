@@ -27,6 +27,7 @@ python xx.py --ip 192.168.xx.xx,192.168.xx.xx
 # @Time     : 2020/12/17
 # @Author   : Evan Liu
 # @Python   : 3.0+
+# @System   : Windows/Linux
 
 import re
 import os
@@ -46,12 +47,12 @@ args = parser.parse_args()
 
 class SocketFileSync(object):
 
-    def __init__(self, local_host_ip, other_host_ip, file_directory='task'):
+    def __init__(self, local_host_ip, other_host_ip, file_directory='Socket_Files'):
         """
         Socket初始化配置
         :param str local_host_ip: 本地Server端IP，例如：local_host_ip = '192.168.xx.xx'
         :param list other_host_ip: 其他Server端IP，例如：other_host_ip = [192.168.xx.xx, 192.168.xx.xx]
-        :param str file_directory: 文件目录名
+        :param str file_directory: Socket文件存放目录名
         """
         assert local_host_ip, 'local_host_ip 不能为空'
         assert other_host_ip, 'other_host_ip 不能为空'
@@ -316,7 +317,8 @@ class SocketFileSync(object):
                     # 接收客户端发送的文件，将二进制全部保存到python变量中
                     data_content = ''.encode()
                     while True:
-                        socket_data = self.receive_socket_info(handle=conn, expected_msg='', do_decode=False)
+                        socket_data = self.receive_socket_info(handle=conn, expected_msg='',
+                                                               do_decode=False, do_print_info=False)
                         if '文件传输完毕'.encode() in socket_data:
                             break
                         data_content += socket_data
@@ -511,7 +513,7 @@ def parameter_testing():
     command = 'ipconfig' if 'win' in sys.platform else 'ifconfig'
     ip_config = os.popen(command)  # 使用命令获取主机配置信息
 
-    regex = r'IPv4.+? : (\d+\.\d+\.\d+\.\d+)' if 'win' in sys.platform else r'mtu 1500\n.+? (\d+\.\d+\.\d+\.\d+).+?netmask'
+    regex = r'IPv4.+? : (\d+\.\d+\.\d+\.\d+)' if 'win' in sys.platform else r'eth0.+?\n.+?addr:(\d+\.\d+\.\d+\.\d+)'
     result = re.search(regex, ip_config.read())  # 使用正则表达式匹配主机IP
     if result:
         local_ip = result.group(1)
