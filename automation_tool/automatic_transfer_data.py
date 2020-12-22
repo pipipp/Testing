@@ -1,9 +1,13 @@
 """
 The file is located on a Windows central control machine at BPM2 automation station in Barbados
+Use RPC to implement program calls and data interactions between different systems
+
+=====================================================
 This program will start three multi-threads:
 1. Start an rpc-socket service that listens for all incoming data from the Apollo server
 2. Open the local access data table to read each row of data and transfer it to the corresponding Apollo server
 3. Update the received Apollo server data into the access data table
+=====================================================
 """
 # -*- coding:utf-8 -*-
 # @Time     : 2019/12/27
