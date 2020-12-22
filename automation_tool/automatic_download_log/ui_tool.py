@@ -316,7 +316,7 @@ class CCCSpider(object):
         all_data = self.get_all_test_data(data=first_request_data)
         if not all_data or not all_data['results']:
             raise ValueError('No data was found, Please check that the information you entered is correct!')
-        print('Crawling all test data is completed, Total: {}'.format(len(all_data['results'])))
+        print('Crawling all test data is completed, test records count: {}'.format(len(all_data['results'])))
 
         self.download_results = []
         threads = []
@@ -331,7 +331,7 @@ class CCCSpider(object):
 
         for thread in threads:
             thread.join()
-        print('All the measurement files have been downloaded')
+        print('All the measurement files have been downloaded, download count: {}'.format(len(self.download_results)))
 
 
 class Calendar(object):
