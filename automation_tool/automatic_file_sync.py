@@ -274,6 +274,7 @@ class SocketFileSync(object):
         """
         server = self.setup_server_side()  # 配置服务端
         while True:
+            conn = None
             try:
                 conn, address = server.accept()
                 conn.settimeout(self.socket_timeout_time)  # 设置服务端超时时间
@@ -336,13 +337,13 @@ class SocketFileSync(object):
                     else:
                         self.send_socket_info(handle=conn, msg='服务端写入文件成功')
 
-                # server.close()
+                conn.close()  # 断开socket连接
                 time.sleep(self.waiting_time)
 
             except Exception as ex:
                 self.print_info(msg='服务端发生错误: {}, 正在重新启动...'.format(ex))
-                # if server:
-                #     server.close()
+                if conn:  # 断开socket连接
+                    conn.close()
                 time.sleep(self.waiting_time)
             finally:
                 # 每次服务端被请求后，更新最新的文件列表到self.latest_file_list
@@ -374,7 +375,6 @@ class SocketFileSync(object):
         while True:
             # 循环读取本地目录下的所有文件，判断是否启动客户端
             self.check_local_file_status()
-
             client = None
             try:
                 # 启动客户端
