@@ -26,6 +26,7 @@ Update history:
 
 import os
 import re
+import sys
 import json
 import time
 import html
@@ -617,7 +618,9 @@ class SpiderGui(object):
 
     def tk_quit(self):
         try:
-            os.system('taskkill /im ui_tool.exe /f')  # Force kill process
+            # Gets the name of the currently running program
+            app_name = sys.argv[0].split('/')[-1].split('.py')[0]
+            os.system('taskkill /im {}.exe /f'.format(app_name))  # Force kill process
         except Exception:
             pass
         self.root.destroy()
