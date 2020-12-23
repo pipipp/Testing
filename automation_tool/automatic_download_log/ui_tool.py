@@ -723,6 +723,8 @@ class SpiderGui(object):
                     self.display_all_download_type()
                     return
                 self.custom_download_log.append(each)
+
+            self.custom_type.delete(1.0, tk.END)
             self.display_all_download_type()
         else:
             messagebox.showwarning('Warning', 'Please add the download type\nfor example: UUT_timestamp')
