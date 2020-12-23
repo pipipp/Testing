@@ -617,7 +617,7 @@ class SpiderGui(object):
 
     def tk_quit(self):
         try:
-            os.system('taskkill /im download_ccc_test_log_tool.exe /f')  # Force kill process
+            os.system('taskkill /im ui_tool.exe /f')  # Force kill process
         except Exception:
             pass
         self.root.destroy()
