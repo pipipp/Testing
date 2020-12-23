@@ -17,6 +17,9 @@ Update history:
 # 2020/12/21 update -> Version: 2.6
     1. Add the ability to customize the download log type
 
+# 2020/12/23 update -> Version: 3.0
+    1. Fixed a problem with forcing the deletion process to fail when exiting the GUI
+
 =========================================================
 """
 # -*- coding:utf-8 -*-
@@ -577,7 +580,7 @@ class SpiderGui(object):
         self.build_storage_folder()
         self.root = tk.Tk()
         self.root.geometry('640x410')
-        self.root.title('Download CCC Test Log Tool                         @Author: Evan Liu | @Version: 2.6')
+        self.root.title('Download CCC Test Log Tool                         @Author: Evan Liu | @Version: 3.0')
 
         self.build_date_frame()
         self.build_request_data_frame()
@@ -619,8 +622,17 @@ class SpiderGui(object):
     def tk_quit(self):
         try:
             # Gets the name of the currently running program
-            app_name = sys.argv[0].split('/')[-1].split('.py')[0]
-            os.system('taskkill /im {}.exe /f'.format(app_name))  # Force kill process
+            file_path = sys.argv[0]
+            if '/' in file_path:
+                app_name = sys.argv[0].split('/')[-1]
+            else:
+                app_name = sys.argv[0].split('\\')[-1]
+
+            if '.py' in app_name:
+                app_name = app_name.split('.py')[0] + '.exe'
+
+            print('kill app name: {}'.format(app_name))
+            os.system('taskkill /im {} /f'.format(app_name))  # Force kill process
         except Exception:
             pass
         self.root.destroy()
