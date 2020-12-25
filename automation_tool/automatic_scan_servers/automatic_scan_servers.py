@@ -16,14 +16,14 @@ cat /var/spool/mail/{enter your username}
 Use examples:
 1. Open the terminal window and enter "crontab -e" into VI edit mode
 2. Type the command [usage: minute   hour   day   month   week   command]
-   0 8 * * 1 /usr/local/bin/python /tftpboot/automatic_scan_server.py (It starts every Monday at 8 a.m)
+   0 8 * * 1 /usr/local/bin/python /tftpboot/automatic_scan_servers.py (It starts every Monday at 8 a.m)
 3. Save and exit when you have finished typing
 4. Type "crontab -l" to see the tasks that have been executed and confirm that they were executed successfully
 ===================================================================
 """
 # !/usr/local/bin/python2.7
 # -*- coding:utf-8 -*-
-# @Time     : 2020/8/18
+# @Time     : 2019/06/05
 # @Author   : Evan Liu
 # @Python   : 2.0+
 # @System   : Linux
