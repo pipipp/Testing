@@ -169,6 +169,19 @@ class CCCSpider(object):
                                         '_csession': token
                                     })
 
+    @ staticmethod
+    def cookie_format_conversion(raw_cookies=''):
+        """
+        Convert the cookies to dict type
+        :param raw_cookies:
+        :return:
+        """
+        cookies = {}
+        for line in raw_cookies.split(';'):
+            name, value = line.strip().split('=', 1)
+            cookies[name] = value
+        return cookies
+
     def set_ccc_login_cookies(self, login_cookie, login_session):
         """
         Manually add cookie and session to the crawler
@@ -177,10 +190,10 @@ class CCCSpider(object):
         :return:
         """
         self.session.headers.update({
-            'cookie': login_cookie,
             'csession': login_session,
             '_csession': login_session
         })
+        self.session.cookies.update(self.cookie_format_conversion(login_cookie))
 
     def login_ccc(self, automatic_login=True, authentication_code=''):
         """
@@ -194,18 +207,23 @@ class CCCSpider(object):
                 self.login(authentication_code=authentication_code)
             except Exception as ex:
                 raise ValueError(f'Please check whether the login account and mobile pass code are correct'
-                                 f' or website may be upgraded\nRaise info: {ex}')
+                                 f' or website may be upgraded\nException info: {ex}')
         else:
             print('You need to login the CCC website and press F12 to open the "developer tools" '
-                  'and manually copy the cookie and csession values to start the crawler')
+                  'and manually copy the "cookie" and "csession" values to start the crawler')
             while True:
                 cookie = input('cookie: ')
                 session = input('csession: ')
                 if not cookie or not session:
-                    print('Cookie and csession are empty, please fill in again')
+                    print('!!! cookie or csession are empty, please fill in again')
+                    continue
+
+                try:
+                    self.set_ccc_login_cookies(login_cookie=cookie, login_session=session)
+                except Exception:
+                    print('!!! The cookie format is incorrect: {}\nplease fill in again'.format(cookie))
                     continue
                 break
-            self.set_ccc_login_cookies(login_cookie=cookie, login_session=session)
 
         # Login token double check
         if not self.session.headers.get('csession') or not self.session.headers.get('_csession'):

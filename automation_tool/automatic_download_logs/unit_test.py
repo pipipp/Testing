@@ -182,10 +182,10 @@ class CCCSpider(object):
                 self.login(authentication_code=authentication_code)
             except Exception as ex:
                 raise ValueError(f'Please check whether the login account and mobile pass code are correct'
-                                 f' or website may be upgraded\nRaise info: {ex}')
+                                 f' or website may be upgraded\nException info: {ex}')
         else:
             print('You need to login the CCC website and press F12 to open the "developer tools" '
-                  'and manually copy the cookie and csession values to start the crawler')
+                  'and manually copy the "cookie" and "csession" values to start the crawler')
             while True:
                 cookie = input('cookie: ')
                 session = input('csession: ')
@@ -394,7 +394,7 @@ class CCCSpider(object):
 
 if __name__ == '__main__':
     spider = CCCSpider(login_account=('enter_your_cec_username', 'enter_your_cec_password'), thread_pool_max=10)
-    spider.login_ccc(automatic_login=True, authentication_code='enter_your_pass_code')
+    spider.login_ccc(automatic_login=False, authentication_code='enter_your_pass_code')
     request_data = {
         'sernum': 'FOC24474C35',
         'uuttype': '',
