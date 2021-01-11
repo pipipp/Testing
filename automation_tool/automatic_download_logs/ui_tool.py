@@ -19,7 +19,7 @@ Update history:
 
 # 2020/12/23 update -> Version: 3.0
     1. Fixed a problem with forcing the deletion process to fail when exiting the GUI
-    2. Added the ability to manually fill in cookies to enter the website
+    2. 2021/01/11 update Added the ability to manually fill in cookies to enter the website
 
 =========================================================
 """
