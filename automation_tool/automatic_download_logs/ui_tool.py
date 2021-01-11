@@ -19,6 +19,7 @@ Update history:
 
 # 2020/12/23 update -> Version: 3.0
     1. Fixed a problem with forcing the deletion process to fail when exiting the GUI
+    2. Added the ability to manually fill in cookies to enter the website
 
 =========================================================
 """
@@ -195,11 +196,12 @@ class CCCSpider(object):
         })
         self.session.cookies.update(self.cookie_format_conversion(login_cookie))
 
-    def login_ccc(self, automatic_login=True, authentication_code=''):
+    def login_ccc(self, automatic_login=True, authentication_code='', login_cookies={}):
         """
         Login to the CCC website
         :param bool automatic_login: If the value is False, you need to manually add cookie and cession to crawler
         :param str authentication_code: Fill in the Mobile pass code
+        :param dict login_cookies: If automatic_login is False, you need to provide the login_cookies
         :return:
         """
         if automatic_login:
@@ -209,21 +211,12 @@ class CCCSpider(object):
                 raise ValueError(f'Please check whether the login account and mobile pass code are correct'
                                  f' or website may be upgraded\nException info: {ex}')
         else:
-            print('You need to login the CCC website and press F12 to open the "developer tools" '
-                  'and manually copy the "cookie" and "csession" values to start the crawler')
-            while True:
-                cookie = input('cookie: ')
-                session = input('csession: ')
-                if not cookie or not session:
-                    print('!!! cookie or csession are empty, please fill in again')
-                    continue
-
-                try:
-                    self.set_ccc_login_cookies(login_cookie=cookie, login_session=session)
-                except Exception:
-                    print('!!! The cookie format is incorrect: {}\nplease fill in again'.format(cookie))
-                    continue
-                break
+            try:
+                self.set_ccc_login_cookies(login_cookie=login_cookies['cookie'],
+                                           login_session=login_cookies['csession'])
+            except Exception:
+                raise ValueError('The cookie format is incorrect: {}\n'
+                                 'Please fill in again'.format(login_cookies['cookie']))
 
         # Login token double check
         if not self.session.headers.get('csession') or not self.session.headers.get('_csession'):
@@ -631,7 +624,8 @@ class SpiderGui(object):
 
         tk.Button(self.button_frame, text='Cleanup', command=self.cleanup, bg='#AFEEEE') \
             .grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
-        self.execute_button = tk.Button(self.button_frame, text='Execute', command=self.start_crawl, bg='#98FB98')
+        self.execute_button = tk.Button(self.button_frame, text='Execute',
+                                        command=self.start_crawl, bg='MediumSpringGreen')
         self.execute_button.grid(row=2, column=1, sticky=tk.W, pady=5)
         tk.Button(self.button_frame, text='Quit', command=self.tk_quit, bg='LightSkyBlue')\
             .grid(row=2, column=2, sticky=tk.W, padx=45, pady=5)
@@ -769,10 +763,10 @@ class SpiderGui(object):
 
         tk.Button(self.custom_window, text='Add', command=self.add_download_type,
                   bg='MediumSpringGreen').grid(row=5, column=0, sticky=tk.W, ipadx=8)
-        tk.Button(self.custom_window, text='Cleanup', command=self.clear_all_custom_value,
-                  bg='#AFEEEE').grid(row=5, column=1, sticky=tk.E)
-        tk.Button(self.custom_window, text='Cancel', command=self.custom_window.destroy,
-                  bg='Tan').grid(row=5, column=3, sticky=tk.E)
+        tk.Button(self.custom_window, text='Delete Added Types', command=self.clear_all_custom_value,
+                  bg='Coral').grid(row=5, column=1, sticky=tk.E)
+        tk.Button(self.custom_window, text='Close', command=self.custom_window.destroy,
+                  bg='LightSkyBlue').grid(row=5, column=3, sticky=tk.E)
 
         self.set_gui_center(window=self.custom_window, x=1.4, y=3.7)
 
@@ -847,22 +841,25 @@ class SpiderGui(object):
         self.window = tk.Toplevel(self.root)
         self.window.title('Login Window')
         self.window.wm_attributes("-topmost", True)
-        tk.Label(self.window, text='CEC Username').grid(row=0, column=0)
 
-        self.username = tk.StringVar()
-        tk.Entry(self.window, textvariable=self.username).grid(row=1, column=0)
-        tk.Label(self.window, text='CEC Password').grid(row=0, column=1)
+        text_info = """You need to login the CCC website and press F12 to open the "developer tools"
+and manually copy the "cookie" and "csession" values to start the tool
+        """
+        tk.Label(self.window, text=text_info).grid(row=0, column=0, sticky=tk.W, columnspan=2)
 
-        self.password = tk.StringVar()
-        tk.Entry(self.window, textvariable=self.password, show='*').grid(row=1, column=1)
-        tk.Label(self.window, text='Mobile Pass Code').grid(row=2, column=0)
+        tk.Label(self.window, text='Please enter the "cookie"').grid(row=1, column=0)
+        self.login_cookie = tk.Text(self.window, width=30, height=10)
+        self.login_cookie.grid(row=2, column=0)
 
-        self.pass_code = tk.StringVar()
-        tk.Entry(self.window, textvariable=self.pass_code).grid(row=3, column=0, sticky=tk.NSEW)
+        tk.Label(self.window, text='Please enter the "csession"').grid(row=1, column=1)
+        self.login_csession = tk.Text(self.window, width=30, height=10)
+        self.login_csession.grid(row=2, column=1)
 
         self.login_confirm = tk.Button(self.window, text='Login', command=self.start_login, bg='MediumSpringGreen')
-        self.login_confirm.grid(row=3, column=1)
-        self.set_gui_center(window=self.window, x=1.4, y=3)
+        self.login_confirm.grid(row=3, column=0)
+        tk.Button(self.window, text='Close', command=self.window.destroy, bg='LightSkyBlue').grid(row=3, column=1)
+
+        self.set_gui_center(window=self.window, x=1.3, y=3.3)
 
     @staticmethod
     def build_storage_folder():
@@ -970,22 +967,34 @@ class SpiderGui(object):
         threading.Thread(target=self._start_login, args=()).start()
 
     def _start_login(self):
-        if not self.username.get():
-            messagebox.showwarning('Warning', 'CEC username is null. Please enter again!')
+        login_cookie = self.login_cookie.get(1.0, tk.END).strip()
+        login_csession = self.login_csession.get(1.0, tk.END).strip()
+        if not login_cookie:
+            messagebox.showwarning('Warning', 'cookie is empty, Please enter again!')
             return
-        if not self.password.get():
-            messagebox.showwarning('Warning', 'CEC password is null. Please enter again!')
+        if not login_csession:
+            messagebox.showwarning('Warning', 'csession is empty, Please enter again!')
             return
-        if not self.pass_code.get():
-            messagebox.showwarning('Warning', 'Mobile pass code is null. Please enter again!')
+
+        # Capture the username from cookies
+        username = 'No captured username'
+        try:
+            for line in login_cookie.split(';'):
+                name, value = line.strip().split('=', 1)
+                if 'username' in str(name).lower():
+                    username = value
+                    break
+        except Exception:
+            messagebox.showerror('Error', 'The cookie format is incorrect: {}\nPlease fill in again'.format(login_cookie))
             return
+
         global spider
-        spider = CCCSpider(login_account=(self.username.get(), self.password.get()))
+        spider = CCCSpider(login_account=())
         try:
             self.show_running_bar()
             self.login_confirm.config(text='Logining', state='disable')
             self.login_button.config(text='Logining', state='disable')
-            spider.login_ccc(authentication_code=self.pass_code.get())
+            spider.login_ccc(automatic_login=False, login_cookies=dict(cookie=login_cookie, csession=login_csession))
         except Exception as es:
             self.login_confirm.config(text='Login', state='active')
             self.login_button.config(text='Login', state='active')
@@ -994,7 +1003,7 @@ class SpiderGui(object):
         else:
             self.window.destroy()
             self.login_button.config(text='Logined', state='disable')
-            self.login_laber.config(text=self.username.get())
+            self.login_laber.config(text=username)
             self.logined_flag = True
         finally:
             self.show_idle_status()
@@ -1025,7 +1034,6 @@ class SpiderGui(object):
             'uuttype': all_input_info['uut_type'],
             'area': all_input_info['area'],
             'machine': all_input_info['machine'],
-            'location': '',
             'test': '',
             'passfail': all_input_info['select_status'],
             'start_time': all_input_info['start_time'],
