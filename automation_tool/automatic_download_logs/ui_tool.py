@@ -20,6 +20,7 @@ Update history:
 # 2020/12/23 update -> Version: 3.0
     1. Fixed a problem with forcing the deletion process to fail when exiting the GUI
     2. 2021/01/11 update, Added the ability to manually fill in cookies to enter the website
+    3. 2021/01/12 update, Solve the GUI date control over the year calculation problem
 
 =========================================================
 """
@@ -829,13 +830,18 @@ class SpiderGui(object):
 
     @staticmethod
     def get_start_date():
+        """Handle GUI default start time"""
         year, month, day = datetime.now().strftime('%Y-%m-%d').split('-')
         months = [i for i in range(1, 13)]
         for index, value in enumerate(months):
             if int(month) == value:
                 month = index
                 break
-        return '-'.join([year, '{:02}'.format(months[month - 1]), day]) + ' 00:00:00'
+        if month == 0:  # Solve cross-year calculation problems
+            start_time = '-'.join([str(int(year)-1), '{:02}'.format(months[month - 1]), day]) + ' 00:00:00'
+        else:
+            start_time = '-'.join([year, '{:02}'.format(months[month - 1]), day]) + ' 00:00:00'
+        return start_time
 
     def build_login_window(self):
         self.window = tk.Toplevel(self.root)
