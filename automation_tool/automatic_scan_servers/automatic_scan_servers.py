@@ -25,7 +25,7 @@ Use examples:
 # -*- coding:utf-8 -*-
 # @Time     : 2019/06/05
 # @Author   : Evan Liu
-# @Python   : 2.0+
+# @Python   : 2.7
 # @System   : Linux
 
 import sys

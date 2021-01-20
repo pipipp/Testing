@@ -4,7 +4,7 @@ Unit test log download feature
 # -*- coding:utf-8 -*-
 # @Time     : 2020/03/21
 # @Author   : Evan Liu
-# @Python   : 3.0+
+# @Python   : 3.7
 
 import os
 import re

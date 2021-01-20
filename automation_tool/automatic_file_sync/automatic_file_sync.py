@@ -26,7 +26,7 @@ python xx.py --ip 192.168.xx.xx,192.168.xx.xx
 # -*- coding:utf-8 -*-
 # @Time     : 2020/12/17
 # @Author   : Evan Liu
-# @Python   : 3.0+
+# @Python   : 3.7
 # @System   : Windows/Linux
 
 import re
