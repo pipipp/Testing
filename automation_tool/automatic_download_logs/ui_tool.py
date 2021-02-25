@@ -171,7 +171,7 @@ class CCCSpider(object):
                                         '_csession': token
                                     })
 
-    @ staticmethod
+    @staticmethod
     def cookie_format_conversion(raw_cookies=''):
         """
         Convert the cookies to dict type
