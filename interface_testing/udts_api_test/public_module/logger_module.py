@@ -6,7 +6,7 @@
 import os
 import logging
 
-from interface_testing.udts_automation import settings
+from interface_testing.udts_api_test import settings
 from logging.handlers import TimedRotatingFileHandler
 
 

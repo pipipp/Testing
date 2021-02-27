@@ -4,7 +4,7 @@
 """
 
 import requests
-from interface_testing.udts_automation.public_module.logger_module import logger
+from interface_testing.udts_api_test.public_module.logger_module import logger
 
 
 class RequestProcess(object):

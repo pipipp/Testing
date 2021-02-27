@@ -8,7 +8,7 @@ import platform
 import configparser
 import pandas as pd
 
-from interface_testing.udts_automation import settings
+from interface_testing.udts_api_test import settings
 
 
 def read_excel(filepath, sheet_name=0):
