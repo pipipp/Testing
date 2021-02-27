@@ -8,22 +8,23 @@ import platform
 import configparser
 import pandas as pd
 
-from interface_testing.udts_api_test import settings
+from interface_testing.udts_api_test.settings import PROJECT_DIR
 
 
-def read_excel(filepath, sheet_name=0):
+def read_excel(filename='test_api.xlsx', sheet_name=0):
     """
     读取Excel表格
-    :param filepath: 文件路径
+    :param filename: 文件名
     :param sheet_name: 工作表名
     :return: 包含所有行的列表
     """
+    filepath = os.path.join(PROJECT_DIR['test_file_dir'], filename)
     if not os.path.exists(filepath):
         raise ValueError(f'({filepath}) - 文件不存在，请检查！')
+
     data = pd.read_excel(filepath, sheet_name=sheet_name)  # 读取表格
-    data.fillna('', inplace=True)  # 替换所有的缺失值为""
+    data.fillna('', inplace=True)  # 替换所有的缺失值为空字符""
     new_list = data.values.tolist()
-    # TODO 待继续
     return new_list
 
 
@@ -68,4 +69,4 @@ def check_directory_exists(file_path):
 
 
 if __name__ == '__main__':
-    print(read_excel(filepath=os.path.join(settings.TEST_FILE_DIR, 'test_api.xlsx'), sheet_name=0))
+    print(read_excel())

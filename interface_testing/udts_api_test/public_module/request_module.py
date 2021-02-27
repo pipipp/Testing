@@ -9,7 +9,16 @@ from interface_testing.udts_api_test.public_module.logger_module import logger
 
 class RequestProcess(object):
 
-    def __init__(self, url, params={}, headers={}, cookies={}, method='get', timeout=10):
+    def __init__(self, url, params={}, headers={}, cookies={}, method='GET', timeout=30):
+        """
+
+        :param url: 请求URL
+        :param params: 请求的参数
+        :param headers: 请求携带的头部信息
+        :param cookies: 请求携带的cookie信息
+        :param method: 请求的方法，默认GET
+        :param timeout: 请求的超时时间，默认30秒
+        """
         self.url = url
         self.params = params
         self.headers = headers
@@ -25,15 +34,15 @@ class RequestProcess(object):
         """
         url = params.get('url') or self.url
         params = params.get('params') or self.params
-        method = params.get('method', '').upper() or self.method.upper()
+        method = params.get('method') or self.method
         timeout = params.get('timeout') or self.timeout
 
         result = None
         try:
             # 请求接口
-            if method == 'GET':
+            if method.upper() == 'GET':
                 resp = self.session.get(url=url, params=params, timeout=timeout)
-            elif method == 'POST':
+            elif method.upper() == 'POST':
                 resp = self.session.post(url=url, data=params, timeout=timeout)
             else:
                 logger.warning(f'Undefined method - ({method})')
@@ -52,5 +61,5 @@ class RequestProcess(object):
 
 if __name__ == '__main__':
     # 请求测试
-    request = RequestProcess(url='http://127.0.0.1:8000/proxy/', params={'about': 'all'}, method='get')
+    request = RequestProcess(url='http://127.0.0.1:8000/proxy/', params={'about': 'all'})
     print(request.send_request())

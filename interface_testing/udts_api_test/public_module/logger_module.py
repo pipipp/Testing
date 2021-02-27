@@ -6,7 +6,7 @@
 import os
 import logging
 
-from interface_testing.udts_api_test import settings
+from interface_testing.udts_api_test.settings import PROJECT_DIR
 from logging.handlers import TimedRotatingFileHandler
 
 
@@ -34,9 +34,9 @@ class Logger(object):
             self.logger.addHandler(console_handler)
 
             # 创建一个handler，用于写入日志文件（设置每天创建新的日志文件，最多保留backup_count份）
-            file_handler = TimedRotatingFileHandler(filename=os.path.join(settings.LOGS_DIR, self.log_file_name), when='D',
-                                                    interval=1, backupCount=self.backup_count, delay=True,
-                                                    encoding='utf-8')
+            file_handler = TimedRotatingFileHandler(filename=os.path.join(PROJECT_DIR['logs_dir'], self.log_file_name),
+                                                    when='D', interval=1, backupCount=self.backup_count,
+                                                    delay=True, encoding='utf-8')
             file_handler.setFormatter(self.formatter)
             file_handler.setLevel(self.file_output_level)
             self.logger.addHandler(file_handler)

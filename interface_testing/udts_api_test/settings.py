@@ -1,25 +1,22 @@
 # -*- coding:utf-8 -*-
 import os
 
-# 项目根目录
+# 根目录
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# logs根目录
-LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+# 项目目录
+PROJECT_DIR = {
+    'logs_dir': os.path.join(BASE_DIR, 'logs'),
+    'test_case_dir': os.path.join(BASE_DIR, 'test_case'),
+    'test_file_dir': os.path.join(BASE_DIR, 'test_file'),
+    'result_dir': os.path.join(BASE_DIR, 'result'),
+}
 
-# test_case根目录
-TEST_CASE_DIR = os.path.join(BASE_DIR, 'test_case')
-
-# test_file根目录
-TEST_FILE_DIR = os.path.join(BASE_DIR, 'test_file')
-
-# result根目录
-RESULT_DIR = os.path.join(BASE_DIR, 'result')
-
-
-if __name__ == '__main__':
-    print(BASE_DIR)
-    print(LOGS_DIR)
-    print(TEST_CASE_DIR)
-    print(TEST_FILE_DIR)
-    print(RESULT_DIR)
+# 邮件配置
+EMAIL = {
+    'on_off': 'ON',
+    'subject': '接口自动化测试报告',
+    'app': 'Outlook',
+    'addressee': 'evanliuu@qq.com',
+    'cc': 'pipi@qq.com',
+}
