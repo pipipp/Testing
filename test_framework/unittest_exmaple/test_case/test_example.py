@@ -13,8 +13,6 @@
 import sys
 import unittest
 
-__author__ = 'Evan'
-
 
 class UnitTestExample(unittest.TestCase):
 
@@ -50,7 +48,7 @@ class UnitTestExample(unittest.TestCase):
             self._add(1, [2])
 
     # 跳过指定的用例
-    @unittest.skip('Use the "skip" method to skip the TestCase test for test_case_2')
+    @unittest.skip('Use the "skip" method to skip the test_case test for test_case_2')
     def test_case_2(self, a=1, b=2, expect_value=30):
         """
         计算两个值相加，如果测试值和期待值相等就为Pass

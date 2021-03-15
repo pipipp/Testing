@@ -13,8 +13,6 @@ from urllib.parse import quote, unquote
 from collections import OrderedDict
 from pymongo import MongoClient
 
-__author__ = 'Evan'
-
 
 class RequestTest(object):
 
