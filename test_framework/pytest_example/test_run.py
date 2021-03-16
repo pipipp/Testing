@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
-""" pytest使用方法
+""" Pytest模块使用方法
 
-显示可用的内置函数参数
+显示可用的内置函数参数：
     pytest --fixtures
 
 Pytest Exit Code 含义：
@@ -13,8 +13,8 @@ Pytest Exit Code 含义：
     Exit code 5     未采集到可用测试用例文件
 
 用例执行：
-    一、使用main函数执行方式：
-        pytest.main(['-s', 'test_run.py'])  # 列表内第一个为执行参数，第二个为执行文件
+    一、使用main函数执行方式：默认为当前目录以'test_'开头的文件和函数
+        pytest.main(['-s', 'test_run.py'])  # 列表内第一个为执行参数，第二个为执行文件或目录
 
     二、使用命令执行方式：
         1. 在第N个用例失败后，结束测试执行
@@ -139,6 +139,7 @@ Pytest Exit Code 含义：
             pytest -vv --cov=./ --cov-report=html
             open htmlcov/index.html
 """
+
 import pytest
 
 
@@ -197,5 +198,5 @@ class TestCase(object):
 
 
 if __name__ == '__main__':
-    pytest.main(['-s', 'test_run.py'])  # 调用pytest的main函数执行测试
+    pytest.main(['-s', 'test_run.py'])  # 调用pytest的main函数，指定执行'test_run.py'
     # pytest.main(['-s', 'test_run.py::TestCase::test_a'])  # 通过节点，指定执行test_a方法测试

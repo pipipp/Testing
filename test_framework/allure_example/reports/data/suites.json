@@ -1,0 +1,52 @@
+{
+  "uid" : "98d3104e051c652961429bf95fa0b5d6",
+  "name" : "suites",
+  "children" : [ {
+    "name" : "test_run",
+    "children" : [ {
+      "name" : "TestShoppingTrolley",
+      "children" : [ {
+        "name" : "test_add_shopping_trolley",
+        "uid" : "af9bdf51f65ced3f",
+        "parentUid" : "37f9a70e7d1d4952e083955b4c7f879b",
+        "status" : "failed",
+        "time" : {
+          "start" : 1615859656775,
+          "stop" : 1615859656797,
+          "duration" : 22
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_edit_shopping_trolley",
+        "uid" : "33957da0ce17204b",
+        "parentUid" : "37f9a70e7d1d4952e083955b4c7f879b",
+        "status" : "passed",
+        "time" : {
+          "start" : 1615859656844,
+          "stop" : 1615859656845,
+          "duration" : 1
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_delete_shopping_trolley",
+        "uid" : "5a2229c73393d2ed",
+        "parentUid" : "37f9a70e7d1d4952e083955b4c7f879b",
+        "status" : "skipped",
+        "time" : {
+          "start" : 1615859656852,
+          "stop" : 1615859656852,
+          "duration" : 0
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "37f9a70e7d1d4952e083955b4c7f879b"
+    } ],
+    "uid" : "bced919a3aa50125c52c3ef94084fcf8"
+  } ]
+}

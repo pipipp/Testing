@@ -1,0 +1,31 @@
+[ {
+  "uid" : "5a2229c73393d2ed",
+  "name" : "test_delete_shopping_trolley",
+  "time" : {
+    "start" : 1615859656852,
+    "stop" : 1615859656852,
+    "duration" : 0
+  },
+  "status" : "skipped",
+  "severity" : "normal"
+}, {
+  "uid" : "33957da0ce17204b",
+  "name" : "test_edit_shopping_trolley",
+  "time" : {
+    "start" : 1615859656844,
+    "stop" : 1615859656845,
+    "duration" : 1
+  },
+  "status" : "passed",
+  "severity" : "normal"
+}, {
+  "uid" : "af9bdf51f65ced3f",
+  "name" : "test_add_shopping_trolley",
+  "time" : {
+    "start" : 1615859656775,
+    "stop" : 1615859656797,
+    "duration" : 22
+  },
+  "status" : "failed",
+  "severity" : "normal"
+} ]

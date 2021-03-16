@@ -1,0 +1,52 @@
+{
+  "uid" : "ab17fc5a4eb3bca4b216b548c7f9fcbc",
+  "name" : "timeline",
+  "children" : [ {
+    "name" : "EVALIU-TWF0T",
+    "children" : [ {
+      "name" : "6368-MainThread",
+      "children" : [ {
+        "name" : "test_delete_shopping_trolley",
+        "uid" : "5a2229c73393d2ed",
+        "parentUid" : "d8ef7b55ec4810b5d8319fbd68245578",
+        "status" : "skipped",
+        "time" : {
+          "start" : 1615859656852,
+          "stop" : 1615859656852,
+          "duration" : 0
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_add_shopping_trolley",
+        "uid" : "af9bdf51f65ced3f",
+        "parentUid" : "d8ef7b55ec4810b5d8319fbd68245578",
+        "status" : "failed",
+        "time" : {
+          "start" : 1615859656775,
+          "stop" : 1615859656797,
+          "duration" : 22
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "parameters" : [ ]
+      }, {
+        "name" : "test_edit_shopping_trolley",
+        "uid" : "33957da0ce17204b",
+        "parentUid" : "d8ef7b55ec4810b5d8319fbd68245578",
+        "status" : "passed",
+        "time" : {
+          "start" : 1615859656844,
+          "stop" : 1615859656845,
+          "duration" : 1
+        },
+        "flaky" : false,
+        "newFailed" : false,
+        "parameters" : [ ]
+      } ],
+      "uid" : "d8ef7b55ec4810b5d8319fbd68245578"
+    } ],
+    "uid" : "f0aac2b46b6c4952b66841d2c3398b3d"
+  } ]
+}
