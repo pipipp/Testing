@@ -82,11 +82,11 @@ Pytest Exit Code 含义：
             ids：测试用例的名称，将打印到测试结果中
 
     2. 跳过测试函数
-        使用方法：
+        使用方法：默认False
             @pytest.mark.skipif(condition=2 > 1, reason="跳过该函数")
 
     3. 标记为预期失败函数：
-        使用方法：
+        使用方法：默认False
             @pytest.mark.xfail(condition=2 > 1, reason="标注为预期失败")
 
     4. 函数数据参数化：方便测试函数对测试数据的获取，执行次数等于参数值数量
@@ -185,14 +185,14 @@ class TestCase(object):
         print('------->test_b')
         assert 2 == fixture_params, f'期待的值：{2}，实际的值：{before_outside}'
 
-    @pytest.mark.skipif(condition=2 > 1, reason="跳过该函数")  # 跳过测试函数test_c
+    @pytest.mark.skipif(reason="跳过该函数")  # 跳过测试函数test_c
     def test_c(self):
         print('------->test_c')
         assert 0
 
     @pytest.mark.parametrize('a,b', [(1, 2), (3, 3)])  # 使用参数化传值
-    def test_c(self, a, b):
-        print('------->test_c')
+    def test_d(self, a, b):
+        print('------->test_d')
         assert a == b
 
 
