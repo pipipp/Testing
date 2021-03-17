@@ -4,6 +4,9 @@
 显示可用的内置函数参数：
     pytest --fixtures
 
+显示收集到哪些测试用例：
+    pytest --collect-only
+
 Pytest Exit Code 含义：
     Exit code 0     所有用例执行完毕，全部通过
     Exit code 1     所有用例执行完毕，存在Failed的测试用例
