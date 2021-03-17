@@ -8,7 +8,8 @@ from test_framework.unittest_exmaple.test_case.test_example import UnitTestExamp
 def run():
     """用例执行方案"""
     # 方案一
-    unittest.main()  # 直接调用main方法启动所有以"test_"开头命名的方法，用例按照字母顺序执行
+    # unittest.main()  # 直接调用main方法启动所有以"test_"开头命名的方法，用例按照字母顺序执行
+    unittest.main(verbosity=2)  # 设置控制台消息显示等级，0-2，默认1
 
     # 方案二（使用suite套件，调用unittest类方法，自定义添加用例和执行顺序）
     suite = unittest.TestSuite()  # 实例化测试套件
