@@ -30,8 +30,8 @@ Pytest Exit Code 含义：
         3. 指定测试目录
             pytest testing/
 
-        4. 通过关键字表达式过滤执行
-            pytest -k 'MyClass and not method'
+        4. 通过关键字表达式过滤执行：只运行名称匹配的测试方法
+            pytest -k 'string expr'
 
         5. 通过 node id 指定测试用例（由模块文件名、分隔符、类名、分隔符、方法名、参数构成）
             运行模块中的指定用例：
