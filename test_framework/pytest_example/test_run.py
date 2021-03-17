@@ -76,10 +76,11 @@ Pytest Exit Code 含义：
             @pytest.fixture(scope="function", params=None, autouse=False, ids=None, name=None)
         常用参数:
             scope：被标记方法的作用域
-                1. "function"(默认)：  作用于测试方法，在每个测试方法前执行一次，优先于setup
-                2. "class"：           作用于整个类，在测试类加载前执行一次，优先于setup_class
-                3. "module"：          作用于整个模块，在当前模块加载前执行一次
-                4. "session：          作用于整个session，在整个测试活动开始前执行一次
+                1. function：        表示fixture函数在【每个测试方法执行前后】执行一次。优先于setup
+                2. class：           表示fixture函数在【每个测试类执行前后】执行一次。优先于setup_class
+                3. module：          表示fixture函数在【每个测试脚本执行前后】执行一次。
+                4. package：         表示fixture函数在【测试包（文件夹）中【第一个测试用例】执行前和【最后一个测试用例】执行后】执行一次。
+                5. session：         表示【所有测试的最开始和结束后】执行一次。
             params：提供参数数据，供调用函数使用，list类型
             autouse：是否自动运行（即使没有被任何地方调用），默认为False
             ids：测试用例的名称，将打印到测试结果中
