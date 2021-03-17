@@ -78,8 +78,8 @@ Pytest Exit Code 含义：
             scope：被标记方法的作用域
                 1. "function"(默认)：  作用于测试方法，在每个测试方法前执行一次，优先于setup
                 2. "class"：           作用于整个类，在测试类加载前执行一次，优先于setup_class
-                3. "module"：          作用于整个模块，所有test只运行一次
-                4. "session：          作用于整个session，所有session只运行一次
+                3. "module"：          作用于整个模块，在当前模块加载前执行一次
+                4. "session：          作用于整个session，在整个测试活动开始前执行一次
             params：提供参数数据，供调用函数使用，list类型
             autouse：是否自动运行（即使没有被任何地方调用），默认为False
             ids：测试用例的名称，将打印到测试结果中
