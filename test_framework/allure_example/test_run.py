@@ -15,7 +15,7 @@
         2. pytest test_run.py --allure_features='aa' --allure_stories='bb'   # 执行指定的feature和story
 
     二、生成测试报告页面：--clean选项目的是先清空测试报告目录，再生成新的测试报告。
-        allure generate ./results/ -o ./reports/ --clean
+        allure generate ./results/ -o ./allure_reports/ --clean
 
 Allure测试报告，常用页面介绍：
     1. Overview页面
