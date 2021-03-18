@@ -11,10 +11,10 @@
 
 生成Allure测试报告：
     一、生成测试报告数据
-        1. pytest test_run.py --alluredir ./results/    # 执行所有用例，并生成报告到reports目录下
+        1. pytest test_run.py --alluredir ./results/    # 执行用例，并生成allure结果到results目录下，--clean选项会先清空再创建
         2. pytest test_run.py --allure_features='aa' --allure_stories='bb'   # 执行指定的feature和story
 
-    二、生成测试报告页面：--clean选项目的是先清空测试报告目录，再生成新的测试报告。
+    二、生成测试报告页面：--clean选项会先清空再创建
         allure generate ./results/ -o ./allure_reports/ --clean
 
 Allure测试报告，常用页面介绍：
