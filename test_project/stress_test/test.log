@@ -1,0 +1,13 @@
+2021-03-24 16:02:23,115 - stress_test.py[line:87] - DEBUG: 请求配置**************************************************
+2021-03-24 16:02:23,115 - stress_test.py[line:88] - DEBUG: url：http://127.0.0.1:8000/proxy/
+2021-03-24 16:02:23,115 - stress_test.py[line:89] - DEBUG: params：{'about': 'all'}
+2021-03-24 16:02:23,115 - stress_test.py[line:90] - DEBUG: headers：{}
+2021-03-24 16:02:23,115 - stress_test.py[line:91] - DEBUG: thread_sum：600
+2021-03-24 16:02:23,115 - stress_test.py[line:92] - DEBUG: **********************************************************
+2021-03-24 16:02:23,115 - stress_test.py[line:94] - INFO: 压测次数：600
+2021-03-24 16:02:23,115 - stress_test.py[line:95] - INFO: 请求通过次数：600
+2021-03-24 16:02:23,126 - stress_test.py[line:96] - INFO: 请求异常次数：0
+2021-03-24 16:02:23,126 - stress_test.py[line:100] - INFO: 总响应最大时长：2119.3ms
+2021-03-24 16:02:23,126 - stress_test.py[line:101] - INFO: 总响应最小时长：12.62ms
+2021-03-24 16:02:23,126 - stress_test.py[line:105] - INFO: 平均响应时长：792.29ms
+2021-03-24 16:02:23,126 - stress_test.py[line:106] - INFO: TPS（并发数/平均响应时长）：757.3/s
