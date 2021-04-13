@@ -26,11 +26,12 @@ def graph_recognition(picture, threshold=150):
             table.append(1)
 
     image = image.point(table, '1')  # 二值化处理
-    image.show()  # 显示处理后的图片
+    # image.show()  # 显示处理后的图片
 
     result = tesserocr.image_to_text(image)  # 识别图片，转化为字符串，如果没结果，调整阈值大小
     return result
 
 
 if __name__ == '__main__':
-    print(graph_recognition(picture='demo.jpg'))
+    code = graph_recognition(picture='demo.jpg')
+    print(f'图形验证码识别：{code}')
