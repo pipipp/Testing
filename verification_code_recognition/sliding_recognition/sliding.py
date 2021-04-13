@@ -32,7 +32,7 @@ class SlidingRecognition(object):
     def __init__(self):
         self.url = 'https://www.geetest.com/demo/slide-popup.html'
         options = webdriver.ChromeOptions()
-        # options.add_argument("--start-maximized")  # 最大化窗口
+        options.add_argument("--start-maximized")  # 最大化窗口
         self.browser = webdriver.Chrome(options=options)
         self.wait = WebDriverWait(self.browser, 30)
 
