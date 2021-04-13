@@ -217,33 +217,35 @@ class SlidingRecognition(object):
         ActionChains(self.browser).release().perform()  # 执行鼠标松开
 
     def main(self):
-        try:
-            self.login()
-            self.click_slider_button()  # 点击验证按钮
+        while True:
+            try:
+                self.login()
+                self.click_slider_button()  # 点击验证按钮
 
-            # 获取滑动验证码背景图
-            gap_img = self.get_sliding_picture(picture_name='gap.png')  # 得到有缺口的背景图
-            self.hide_slider()  # 执行JS，隐藏滑块缺口
-            raw_img = self.get_sliding_picture(picture_name='raw.png')  # 得到原始图
+                # 获取滑动验证码背景图
+                gap_img = self.get_sliding_picture(picture_name='gap.png')  # 得到有缺口的背景图
+                self.hide_slider()  # 执行JS，隐藏滑块缺口
+                raw_img = self.get_sliding_picture(picture_name='raw.png')  # 得到原始图
 
-            # 模拟拖动
-            gap_distance = self.get_gap(gap_img, raw_img)  # 对比两个图片，获取缺口偏移量
-            gap_distance -= 6  # 减去缺口位移
+                # 模拟拖动
+                gap_distance = self.get_gap(gap_img, raw_img)  # 对比两个图片，获取缺口偏移量
+                gap_distance -= 6  # 减去缺口位移
 
-            track = self.get_track(gap_distance)  # 根据偏移量获取移动轨迹
+                track = self.get_track(gap_distance)  # 根据偏移量获取移动轨迹
 
-            slider = self.get_slider()  # 获取滑动验证码对象
-            self.move_slider(slider, track)  # 滑动滑块到缺口处
+                slider = self.get_slider()  # 获取滑动验证码对象
+                self.move_slider(slider, track)  # 滑动滑块到缺口处
 
-            # 点击登陆
-            result = self.wait.until(
-                EC.text_to_be_present_in_element((By.CLASS_NAME, 'geetest_success_radar_tip_content'), '验证成功'))
-            print('登录情况：', result)
+                # 点击登陆
+                result = self.wait.until(
+                    EC.text_to_be_present_in_element((By.CLASS_NAME, 'geetest_success_radar_tip_content'), '验证成功'))
+                print('登录情况：', result)
+                break
 
-        except Exception as ex:
-            print(f'Login failed, error msg: {ex}')
-            print('try again!!!')
-            self.main()
+            except Exception as ex:
+                print(f'Login failed, error msg: {ex}')
+                print('try again!!!')
+                self.main()
 
 
 if __name__ == '__main__':
